@@ -36,7 +36,12 @@ function DangNhapForm() {
       localStorage.setItem("userId", String(data.id))
       localStorage.setItem("email", data.email)
       localStorage.setItem("vaiTro", data.vaiTro)
-
+      
+        localStorage.setItem(
+      "nguoiDung",
+      JSON.stringify(data)
+    );
+    
       if (data.vaiTro === "OWNER") {
         navigate("/")
       } else if (data.vaiTro === "USER") {

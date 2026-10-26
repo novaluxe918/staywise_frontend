@@ -7,4 +7,5 @@ export interface DangKyDTO{
   matKhau: string;
   xacNhanMatKhau: string;
   vaiTro: VaiTro;
+  
 }

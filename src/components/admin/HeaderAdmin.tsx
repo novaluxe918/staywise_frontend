@@ -5,8 +5,27 @@ import {
   ChevronDown,
   Building2,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+
+interface NguoiDung{
+  id: number;
+  email: string;
+  vaiTro: string;
+  hoTen: string;
+
+}
 
 export default function HeaderAdmin() {
+  const[nguoiDung, setNguoiDung] = useState<NguoiDung | null>(null);
+  
+  useEffect(() => {
+
+    const user = localStorage.getItem("nguoiDung");
+
+     if (user) {
+    setNguoiDung(JSON.parse(user) as NguoiDung);
+  }
+  }, [])
   return (
     <header className="fixed left-72 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white/95 px-6 backdrop-blur">
       {/* Chọn cơ sở và tìm kiếm */}
@@ -69,11 +88,9 @@ export default function HeaderAdmin() {
 
           <div className="hidden text-left sm:block">
             <p className="text-sm font-semibold">
-              Hoàng Minh Trí
+                {nguoiDung?.hoTen ?? "Chủ HomeStay"}
             </p>
-            <p className="text-xs text-gray-500">
-              Chủ cơ sở
-            </p>
+         
           </div>
 
           <ChevronDown size={18} />

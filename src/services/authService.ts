@@ -17,6 +17,7 @@ export interface DangNhapResponse{
     id: number;
     email: string;
     vaiTro:string;
+    hoTen: string;
 }
 
 export const dangNhap = async(
