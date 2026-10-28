@@ -2,6 +2,7 @@ import { ArrowRight, Eye, EyeOff, House, LockKeyhole, Mail, UserRound } from 'lu
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dangNhap } from '../../../services/authService';
+import { useAuth } from '../../../context/AuthContext';
 
 type UserRole = "USER" | "OWNER"
 
@@ -15,6 +16,7 @@ function DangNhapForm() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const navigate = useNavigate()
+  const { dangNhap: capNhatAuth } = useAuth();
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -32,15 +34,8 @@ function DangNhapForm() {
         setError("Vai tro khong hop voi tai khoan");
         return;
       }
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", String(data.id))
-      localStorage.setItem("email", data.email)
-      localStorage.setItem("vaiTro", data.vaiTro)
       
-        localStorage.setItem(
-      "nguoiDung",
-      JSON.stringify(data)
-    );
+      capNhatAuth(data)
     
       if (data.vaiTro === "OWNER") {
         navigate("/")

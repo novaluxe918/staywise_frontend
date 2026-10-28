@@ -5,12 +5,14 @@ import Dasboard from '../page/admin/dasboard/Dasboard';
 import QuanLyPhong from '../page/admin/phong/QuanLyPhong';
 import DangKy from '../page/auth/dangky/DangKy';
 import DangNhap from '../page/auth/dangnhap/DangNhap';
+import DangKyThongTin from '../page/admin/homestay/DangKyThongTin';
 
 function AppRoutes() {
     return (
         <Routes>
             <Route path='/dang-ky' element={<DangKy />} />
-            <Route path='dang-nhap' element={<DangNhap />} />
+            <Route path='/dang-nhap' element={<DangNhap />} />
+            <Route path='/dang-ky-homestay' element={<DangKyThongTin />} />
             <Route path='/' element={<LayoutAdmin />}>
                   <Route index element={<Navigate to="/tong-quan" replace />} />
 

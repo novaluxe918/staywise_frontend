@@ -9,3 +9,16 @@ export interface DangKyDTO{
   vaiTro: VaiTro;
   
 }
+
+export interface DangNhapRequest{
+    email : string;
+    matKhau : string;
+}
+
+export interface DangNhapResponse{
+    token: string;
+    id: number;
+    email: string;
+     vaiTro: "USER" | "OWNER";
+    hoTen: string;
+}
