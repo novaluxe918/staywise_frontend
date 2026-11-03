@@ -10,10 +10,12 @@ import {
   FileText,
   MapPin,
   CheckCircle2,
+  FileCheck2,
 } from "lucide-react";
 import { dangKyHomeStay } from "../../../services/homestayService";
 import type { PhuongXa, TinhThanh } from "../../../types/diaChi";
 import { layDanhSachPhuongXa, layDanhSachTinhThanh } from "../../../services/diaChiService";
+import type { HomeStayRequest } from "../../../types/homestay";
 
 interface AnhHomeStay {
   id: string;
@@ -22,8 +24,20 @@ interface AnhHomeStay {
 }
 
 export default function DangKyThongTin() {
-  const inputFileRef = useRef<HTMLInputElement>(null);
 
+  const [form, setForm] = useState<HomeStayRequest>({
+    tenHomeStay: "",
+    moTa: "",
+    theLoaiHomeStay: "",
+    soDienThoai: "",
+    email: "",
+    tinhThanh: "",
+    phuongXa: "",
+    diaChi: "",
+  });
+
+  const inputFileRef = useRef<HTMLInputElement>(null);
+  const [dangLuu, setDangLuu] = useState<boolean>(false);
   const [anhList, setAnhList] = useState<AnhHomeStay[]>([]);
   const [anhBia, setAnhBia] = useState<string | null>(null);
   const [danhSachTinhThanh, setDanhSachTinhThanh] =
@@ -32,17 +46,6 @@ export default function DangKyThongTin() {
   const [danhSachPhuongXa, setDanhSachPhuongXa] =
     useState<PhuongXa[]>([]);
 
-  const [form, setForm] = useState({
-    tenHomeStay: "",
-    moTa: "",
-    theLoaiHomeStay: "",
-    soDienThoai: "",
-    email: "",
-    tinhThanh: "",
-    quanHuyen: "",
-    phuongXa: "",
-    diaChi: "",
-  });
 
 
   useEffect(() => {
@@ -96,24 +99,37 @@ export default function DangKyThongTin() {
       [name]: value,
     }));
   };
-
   const xuLyChonAnh = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
 
+    if (files.length === 0) return;
+
+    const dinhDangHopLe = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
     const anhHopLe = files.filter(
       (file) =>
-        ["image/jpeg", "image/png", "image/webp"].includes(file.type) &&
-        file.size <= 10 * 1024 * 1024
+        dinhDangHopLe.includes(file.type)
     );
 
-    setAnhList((prev) => {
-      const conDuocThem = Math.max(0, 20 - prev.length);
-      const anhMoi = anhHopLe.slice(0, conDuocThem).map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-        url: URL.createObjectURL(file),
-      }));
+    const anhSaiDinhDang = files.filter(
+      (file) => !dinhDangHopLe.includes(file.type)
+    );
 
+    const anhVuotDungLuong = files.filter(
+      (file) => !dinhDangHopLe.includes(file.type)
+    );
+
+    const anhMoi = anhHopLe.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      url: URL.createObjectURL(file),
+    }));
+
+    setAnhList((prev) => {
       if (!anhBia && anhMoi.length > 0) {
         setAnhBia(anhMoi[0].id);
       }
@@ -121,7 +137,11 @@ export default function DangKyThongTin() {
       return [...prev, ...anhMoi];
     });
 
-    // Cho phép chọn lại cùng một file.
+    if (anhSaiDinhDang.length > 0) {
+      alert("Một số file không đúng định dạng JPG, PNG hoặc WEBP.");
+    }
+
+
     e.target.value = "";
   };
 
@@ -141,43 +161,67 @@ export default function DangKyThongTin() {
     }
   };
 
-  const xuLyGuiForm = async (e: React.FormEvent<HTMLFormElement>) => {
+
+
+  const xuLyGuiForm = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
+    if (dangLuu) return;
+
+    // Yêu cầu tối thiểu 5 ảnh
     if (anhList.length < 5) {
       alert("Vui lòng tải lên ít nhất 5 ảnh HomeStay.");
       return;
     }
 
-    const formData = new FormData();
-
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value)
-    });
-
-    anhList.forEach((anh) => {
-      formData.append("files", anh.file)
-    });
+    setDangLuu(true);
 
     try {
-      const response = await dangKyHomeStay(formData);
+      const data = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        data.append(key, value);
+      });
+
+      const response = await dangKyHomeStay(data);
+
       alert(response.data);
- 
-} catch (error: any) {
-  console.error("Lỗi đăng ký HomeStay:", error);
-  console.log("Status:", error.response?.status);
-  console.log("Response data:", error.response?.data);
-  console.log("Response headers:", error.response?.headers);
 
-  alert(
-    "Mã lỗi: " + (error.response?.status ?? "Không nhận được phản hồi") +
-    "\nNội dung: " +
-    (typeof error.response?.data === "string"
-      ? error.response.data
-      : JSON.stringify(error.response?.data, null, 2))
-  );
-}
+      setForm({
+        tenHomeStay: "",
+        moTa: "",
+        phuongXa: "",
+        tinhThanh: "",
+        diaChi: "",
+        soDienThoai: "",
+        email: "",
+        theLoaiHomeStay: "",
+      });
 
+      anhList.forEach((anh) => {
+        URL.revokeObjectURL(anh.url);
+      });
+
+      setAnhList([]);
+      setAnhBia(null);
+
+    } catch (error: any) {
+      console.error("Lỗi đăng ký HomeStay:", error);
+      console.log("Backend response:", error.response?.data);
+      console.log("HTTP status:", error.response?.status);
+
+      const message =
+        typeof error.response?.data === "string"
+          ? error.response.data
+          : error.response?.data?.message ??
+          "Không thể kết nối đến máy chủ. Vui lòng thử lại.";
+
+      alert(message);
+
+    } finally {
+      setDangLuu(false);
+    }
   };
 
   const inputClass =
@@ -427,7 +471,7 @@ export default function DangKyThongTin() {
                   </div>
 
                   <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                    {anhList.length}/20 ảnh
+                    {anhList.length} ảnh
                   </span>
                 </div>
 
@@ -578,6 +622,17 @@ export default function DangKyThongTin() {
                     </div>
                   </div>
 
+
+                  <div className="flex items-start gap-3">
+                    <ImagePlus
+                      size={19}
+                      className="mt-0.5 shrink-0 text-emerald-600"
+                    />
+
+
+                  </div>
+
+
                   <div className="flex items-start gap-3">
                     <ShieldCheck
                       size={19}
@@ -615,8 +670,10 @@ export default function DangKyThongTin() {
                     {anhList.length}
                   </span>
 
-                  <span className="text-sm text-gray-500">/ 20 ảnh</span>
+                  <span className="text-sm text-gray-500"> ảnh</span>
                 </div>
+
+
 
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
                   <div
@@ -626,9 +683,12 @@ export default function DangKyThongTin() {
                     }}
                   />
                 </div>
+
+
               </div>
             </aside>
           </div>
+
 
           {/* NÚT CUỐI TRANG */}
           <div className="mt-8 flex flex-col-reverse justify-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:flex-row sm:p-6">
@@ -642,9 +702,12 @@ export default function DangKyThongTin() {
 
             <button
               type="submit"
-              className="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-600/20"
+              disabled={dangLuu}
+              className="rounded-xl bg-green-700 px-6 py-3 text-white
+             hover:bg-green-800
+             disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Gửi hồ sơ đăng ký
+              {dangLuu ? "Đang đăng ký..." : "Đăng ký HomeStay"}
             </button>
           </div>
         </form>

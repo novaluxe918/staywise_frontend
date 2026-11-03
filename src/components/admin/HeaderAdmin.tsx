@@ -7,42 +7,30 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { dangXuat } from "../../services/authService";
+import { dangXuat as dangXuatAPI } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
 
-interface NguoiDung {
-  id: number;
-  email: string;
-  vaiTro: string;
-  hoTen: string;
 
-}
 
 export default function HeaderAdmin() {
-  const [nguoiDung, setNguoiDung] = useState<NguoiDung | null>(null);
   const [moDropDown, setMoDropdown] = useState(false)
+ const {
+  nguoiDung,
+  dangXuat: xoaPhienDangNhap
+} = useAuth();
   const navigate = useNavigate()
 
-  const handleLogout = async () => {
-    try {
-      await dangXuat();
-
-    } catch (error) {
-      console.error("Loi khi goi API dang xuat: ", error)
-    } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-
-      navigate("/dang-nhap", { replace: true });
-    }
+const handleLogout = async () => {
+  try {
+    await dangXuatAPI(); 
+  } catch (err) {
+    console.error("Lỗi đăng xuất", err);
+  } finally {
+    xoaPhienDangNhap(); 
+    navigate("/", { replace: true });
   }
-  useEffect(() => {
+};
 
-    const user = localStorage.getItem("nguoiDung");
-
-    if (user) {
-      setNguoiDung(JSON.parse(user) as NguoiDung);
-    }
-  }, [])
   return (
     <header className="fixed left-72 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white/95 px-6 backdrop-blur">
       {/* Chọn cơ sở và tìm kiếm */}

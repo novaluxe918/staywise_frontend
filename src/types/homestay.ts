@@ -7,7 +7,10 @@ export interface HomeStayRequest{
   soDienThoai: string;
   email: string;
   theLoaiHomeStay: string;
+
 }
+
+
 
 export interface AnhHomeStay{
       id: string;

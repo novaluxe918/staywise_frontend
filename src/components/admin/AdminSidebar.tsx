@@ -8,6 +8,7 @@ import {
   Star,
   Building2,
   CalendarDays,
+  LayoutGridCircles,
 } from "lucide-react";
 import path from "path";
 
@@ -19,12 +20,13 @@ const menus = [
       { name: "Quản lý Phòng", path: "/quan-ly-phong", icon: BedDouble },
       {name: "Bảng giá & mùa vụ ", path:"bang-gia", icon: CalendarDays},
       { name: "Quản lý Đặt phòng", path: "/quan-ly-dat-phong", icon: CalendarCheck },
-      { name: "Tiện ích & Dịch vụ", path: "/tien-ich", icon: ConciergeBell },
+      { name: "Thể Loại Tiện Ích", path: "/tien-ich", icon: ConciergeBell },
     ],
   },
   {
     title: "Khách hàng & Cơ sở",
     items: [
+      {name: "Tiện ích cơ sở", path: "/tien-ichcs", icon: LayoutGridCircles},
       { name: "Đánh giá từ khách", path: "/admin/danh-gia-tu-khach", icon: Star },
       { name: "Hồ sơ HomeStay", path: "/admin/ho-so-homestay", icon: Building2 },
     ],

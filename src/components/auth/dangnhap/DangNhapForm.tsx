@@ -18,50 +18,30 @@ function DangNhapForm() {
   const navigate = useNavigate()
   const { dangNhap: capNhatAuth } = useAuth();
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
-    try {
-      const data = await dangNhap({
-        email,
-        matKhau: password
-      });
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const data = await dangNhap({ email, matKhau: password });
 
-      const vaiTroChon = role;
-
-      if (data.vaiTro != vaiTroChon) {
-        setError("Vai tro khong hop voi tai khoan");
-        return;
-      }
-      
-      capNhatAuth(data)
-    
-      if (data.vaiTro === "OWNER") {
-        navigate("/")
-      } else if (data.vaiTro === "USER") {
-        navigate("/home")
-      } else {
-        setError("Vai tro chua duoc ho tro")
-      }
-    } catch (err: any) {
-      console.error("Loi dang nhap", err);
-
-      if (err.response) {
-        setError(
-          err.response.data?.message ||
-          err.response.data?.error ||
-          "Email hoặc mật khẩu không chính xác."
-        );
-      } else {
-        setError(
-          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra Backend."
-        );
-      }
-    } finally {
-      setLoading(false);
+    if (data.vaiTro !== role) {
+      setError("Vai trò không hợp với tài khoản");
+      return;
     }
+
+    capNhatAuth(data);
+
+    if (data.vaiTro === "OWNER") {
+      navigate("/tong-quan", { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  } catch (err: any) {
+    setError(err.response?.data?.message || "Đăng nhập thất bại");
+  } finally {
+    setLoading(false);
   }
+};
 
   return (
     <div className='w-full max-w-md'>
@@ -118,7 +98,6 @@ function DangNhapForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="h-12 w-full bg-transparent text-sm outline-none" />
-
           </div>
         </div>
         <div>

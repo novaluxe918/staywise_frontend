@@ -1,0 +1,1 @@
+export type TrangThai = "DANG_HOAT_DONG" | "DA_XOA";
