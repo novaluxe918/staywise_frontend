@@ -25,4 +25,25 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+
+export interface PageResponse<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    last: boolean;
+    empty: boolean;
+}
+
+
+export interface PageParams {
+    tuKhoa?: string;
+    trang?: number;
+    kichThuoc?: number;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
+}
+
 export default api;

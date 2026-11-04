@@ -1,5 +1,6 @@
-import type { PageResponse, TheLoaiTienIch, TheLoaiTienIchDTO, TheLoaiTienIchResponse } from "../types/theLoaiTienIch";
-import api from "./api";
+
+import type { TheLoaiTienIch, TheLoaiTienIchResponse } from "../types/theLoaiTienIch";
+import api, { type PageResponse } from "./api";
 
 export const saveTheLoai = async (
     dto: TheLoaiTienIchDTO,
@@ -30,9 +31,21 @@ export const saveTheLoai = async (
 
     return response.data;
 };
+
+
 export const getAllTheLoai = async (): Promise<TheLoaiTienIch[]> => {
-    const response = await api.get<PageResponse<TheLoaiTienIch>>("/theloaitienich/search");
+    const response = await api.get<PageResponse<TheLoaiTienIch>>(
+        "/theloaitienich/search",
+        {
+            params: {
+                tuKhoa: "",
+                trang: 0,
+                kichThuoc: 100
+            }
+        }
+    );
 
     console.log("Dữ liệu API trả về:", response.data);
+
     return response.data.content;
-}
+};

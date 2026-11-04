@@ -55,7 +55,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
         return () => clearTimeout(timer);
     }, [tuKhoaInput]);
 
-    // 4. Hàm gọi API
     const taiDuLieu = useCallback(async () => {
         setDangTai(true);
 

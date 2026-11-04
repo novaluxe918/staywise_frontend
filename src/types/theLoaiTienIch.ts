@@ -1,4 +1,4 @@
-import api from "../services/api";
+import api, { type PageResponse } from "../services/api";
 import type { TrangThai } from "./enums";
 
 export interface TheLoaiTienIchDTO{
@@ -7,16 +7,6 @@ export interface TheLoaiTienIchDTO{
     hinhAnh?: string;
 }
 
-export interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-    first: boolean;
-    last: boolean;
-    empty: boolean;
-}
 
 
 export interface TheLoaiTienIch{
@@ -31,16 +21,6 @@ export interface TheLoaiTienIchResponse {
     message: string;
 }
 
-export interface PageResponse<T> {
-    content: T[];
-
-    page: {
-        size: number;
-        number: number;
-        totalElements: number;
-        totalPages: number;
-    };
-}
 
 export const searchTheLoai = async (
     tuKhoa: string = '',

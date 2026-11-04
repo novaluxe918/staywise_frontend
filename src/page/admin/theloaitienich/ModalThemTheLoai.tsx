@@ -45,7 +45,6 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
 
     const [fileAnh, setFileAnh] = React.useState<File | null>(null)
     const [dangLuu, setDangLuu] = React.useState<boolean>(false);
-    const [loi, setLoi] = React.useState<string>("");
     const [previewAnh, setPreviewAnh] = React.useState<string | null>(null);
 
     const handleChonAnh = (e: React.ChangeEvent<HTMLInputElement>) => {
