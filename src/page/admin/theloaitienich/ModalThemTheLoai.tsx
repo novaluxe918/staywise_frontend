@@ -1,24 +1,26 @@
-import * as React from 'react';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Swal from "sweetalert2";
-import Slide from '@mui/material/Slide';
-import type { TransitionProps } from '@mui/material/transitions';
-import Box from '@mui/material/Box';
-import { Check, CheckIcon, Flower2, PlusCircle, Shapes, ShieldCheck, Trash2, UploadCloud } from 'lucide-react';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import type { TheLoaiTienIchDTO } from '../../../types/theLoaiTienIch';
-import { saveTheLoai } from '../../../services/theLoaiTienIchService';
-import { theLoaiTienIchSchema, type TheLoaiTienIchForm } from '../../../schemas/theLoaiTienIchSchema';
-import { registry } from 'zod';
+import React, { useEffect, useState } from "react";
+import {
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    Slide,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { Check, Shapes, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
+import { theLoaiTienIchSchema, type TheLoaiTienIchForm } from "../../../schemas/theLoaiTienIchSchema";
+import { toast } from "../../../utils/toast";
+import type { TheLoaiTienIchDTO } from "../../../types/theLoaiTienIch";
+import { saveTheLoai } from "../../../services/theLoaiTienIchService";
+import type { TransitionProps } from "@mui/material/transitions";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -29,7 +31,15 @@ const Transition = React.forwardRef(function Transition(
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { open: boolean; handleClose: () => void; onSuccess: () => void; }) {
+export default function ModalThemTheLoai({
+    open,
+    handleClose,
+    onSuccess,
+}: {
+    open: boolean;
+    handleClose: () => void;
+    onSuccess: () => void;
+}) {
     const {
         register,
         reset,
@@ -42,66 +52,53 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
         },
         mode: "onBlur"
     });
+    const [fileAnh, setFileAnh] = useState<File | null>(null);
+    const [dangLuu, setDangLuu] = useState<boolean>(false);
+    const [previewAnh, setPreviewAnh] = useState<string | null>(null);
 
-    const [fileAnh, setFileAnh] = React.useState<File | null>(null)
-    const [dangLuu, setDangLuu] = React.useState<boolean>(false);
-    const [previewAnh, setPreviewAnh] = React.useState<string | null>(null);
+    const DINH_DANG_HOP_LE = ["image/png", "image/jpeg", "image/svg+xml"];
+    const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
     const handleChonAnh = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-
         if (!file) return;
 
-        // Kiểm tra định dạng
-        const dinhDangHopLe = [
-            "image/png",
-            "image/jpeg",
-            "image/svg+xml"
-        ];
-
-        if (!dinhDangHopLe.includes(file.type)) {
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "warning",
-                title: "Chỉ chấp nhận ảnh SVG, PNG, JPG!",
-                showConfirmButton: false,
-                timer: 2500,
-            });
-
+        if (!DINH_DANG_HOP_LE.includes(file.type)) {
+            toast.warning("Chỉ chấp nhận ảnh SVG, PNG, JPG!");
             e.target.value = "";
             return;
         }
 
-        if (file.size > 2 * 1024 * 1024) {
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "warning",
-                title: "Dung lượng ảnh không được vượt quá 2MB!",
-                showConfirmButton: false,
-                timer: 2500,
-            });
-
+        if (file.size > MAX_FILE_SIZE) {
+            toast.warning("Dung lượng ảnh không được vượt quá 2MB!");
             e.target.value = "";
             return;
         }
+
         setFileAnh(file);
         setPreviewAnh(URL.createObjectURL(file));
     };
 
-    const handleLuuTheLoai = async (data: TheLoaiTienIchForm) => {
+    const resetForm = () => {
+        reset({
+            tenTheLoai: "",
+        });
+        setFileAnh(null);
+        if (previewAnh) {
+            URL.revokeObjectURL(previewAnh);
+        }
+        setPreviewAnh(null);
+    };
 
+    useEffect(() => {
+        if (!open) {
+            resetForm();
+        }
+    }, [open]);
 
+    const handleLuuTheLoai = handleSubmit(async (data) => {
         if (!fileAnh) {
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "warning",
-                title: "Vui lòng chọn ảnh đại diện!",
-                showConfirmButton: false,
-                timer: 2500,
-            });
+            toast.warning("Vui lòng chọn ảnh!");
             return;
         }
 
@@ -109,48 +106,26 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
             setDangLuu(true);
 
             const dto: TheLoaiTienIchDTO = {
-                tenTheLoai: data.tenTheLoai.trim()
+                tenTheLoai: data.tenTheLoai,
             };
 
             const response = await saveTheLoai(dto, fileAnh);
 
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: response.message || "Thêm thể loại thành công!",
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true,
-            });
-
-            reset({ tenTheLoai: '' });
-            setFileAnh(null);
+            toast.success(response.message || "Thêm thể loại thành công!");
             onSuccess();
 
         } catch (error: any) {
-
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "error",
-                title:
-                    error.response?.data?.message ??
-                    error.response?.data?.error ??
-                    "Không thể thêm thể loại tiện ích!",
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-            });
-
+            toast.error(
+                error.response?.data?.message ||
+                "Không thể thêm thể loại tiện ích!"
+            );
         } finally {
             setDangLuu(false);
         }
-    };
+    });
 
     return (
         <React.Fragment>
-
             <Dialog
                 open={open}
                 slots={{
@@ -167,16 +142,16 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                         sx: {
                             borderRadius: 3,
                             p: 2,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                         },
                     },
                 }}
             >
                 <DialogTitle component="div" sx={{ px: 2, pt: 1, pb: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#111827' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: "#111827" }}>
                         Thêm Thể loại Tiện ích
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
                         Khai báo nhóm tiện ích lưu trú mới để phân loại và quản lý các tiện nghi tại cơ sở.
                     </Typography>
                 </DialogTitle>
@@ -184,29 +159,29 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                 <DialogContent sx={{ px: 2, py: 1 }}>
                     <Box
                         sx={{
-                            border: '1px solid #e5e7eb',
+                            border: "1px solid #e5e7eb",
                             borderRadius: 2.5,
                             p: 3,
-                            backgroundColor: '#ffffff',
+                            backgroundColor: "#ffffff",
                         }}
                     >
                         {/* Tiêu đề mục & Tag chuẩn */}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
                                 <Box
                                     sx={{
                                         width: 4,
                                         height: 24,
-                                        backgroundColor: '#047857',
+                                        backgroundColor: "#047857",
                                         borderRadius: 1,
                                         mt: 0.3,
                                     }}
                                 />
                                 <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937" }}>
                                         Thông tin nhóm tiện ích
                                     </Typography>
-                                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                                    <Typography variant="body2" sx={{ color: "#6b7280" }}>
                                         Điền các trường thông tin bên dưới để cấu hình hiển thị cho du khách.
                                     </Typography>
                                 </Box>
@@ -216,20 +191,20 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                                 icon={<ShieldCheck size={16} color="#047857" />}
                                 label="Mẫu chuẩn Staywise"
                                 sx={{
-                                    backgroundColor: '#ecfdf5',
-                                    color: '#065f46',
+                                    backgroundColor: "#ecfdf5",
+                                    color: "#065f46",
                                     fontWeight: 600,
                                     fontSize: 12,
                                     borderRadius: 2,
-                                    '& .MuiChip-icon': { ml: 1 },
+                                    "& .MuiChip-icon": { ml: 1 },
                                 }}
                             />
                         </Box>
 
-                        {/* Ô nhập tên thể loại */}
+                        {/* Ô nhập tên thể loại - Dùng value & onChange thuần */}
                         <Box sx={{ mb: 3.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#374151' }}>
-                                Tên thể loại tiện ích <span style={{ color: '#ef4444' }}>*</span>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "#374151" }}>
+                                Tên thể loại tiện ích <span style={{ color: "#ef4444" }}>*</span>
                             </Typography>
                             <TextField
                                 fullWidth
@@ -244,87 +219,86 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                                     },
                                 }}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
+                                    "& .MuiOutlinedInput-root": {
                                         borderRadius: 2,
                                     },
                                 }}
                             />
-                            <Typography variant="caption" sx={{ color: '#6b7280', mt: 0.8, display: 'block' }}>
+                            <Typography variant="caption" sx={{ color: "#6b7280", mt: 0.8, display: "block" }}>
                                 Tên nhóm sẽ được hiển thị trên bộ lọc tìm kiếm tiện nghi của khách du lịch.
                             </Typography>
                         </Box>
 
-                        {/* Khu vực tải ảnh / biểu tượng */}
+                        {/* Chọn hình ảnh */}
                         <Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#374151' }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
                                     Hình ảnh / Biểu tượng đại diện (HinhAnh)
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                                <Typography variant="caption" sx={{ color: "#6b7280" }}>
                                     Định dạng SVG, PNG, JPG (Tối đa 2MB)
                                 </Typography>
                             </Box>
 
-                            {/* Dropzone */}
                             <Box
                                 component="label"
                                 sx={{
-                                    border: '1.5px dashed #cbd5e1',
+                                    border: "1.5px dashed #cbd5e1",
                                     borderRadius: 2.5,
                                     p: 3,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    backgroundColor: '#fafbfc',
-                                    cursor: 'pointer',
-                                    transition: 'border-color 0.2s',
-                                    '&:hover': { borderColor: '#047857' },
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: "#fafbfc",
+                                    cursor: "pointer",
+                                    transition: "border-color 0.2s",
+                                    "&:hover": { borderColor: "#047857" },
                                 }}
                             >
-                                <input type="file"
-                                    hidden accept=".svg,.png,.jpg,.jpeg"
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept=".svg,.png,.jpg,.jpeg"
                                     onChange={handleChonAnh}
                                 />
                                 <Box
                                     sx={{
-                                        backgroundColor: '#f1f5f9',
-                                        borderRadius: '50%',
+                                        backgroundColor: "#f1f5f9",
+                                        borderRadius: "50%",
                                         p: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         mb: 1.5,
                                     }}
                                 >
                                     <UploadCloud size={26} color="#047857" />
                                 </Box>
-                                <Typography variant="body2" sx={{ color: '#374151', textAlign: 'center' }}>
-                                    <span style={{ color: '#047857', fontWeight: 600 }}>Chọn tệp / Duyệt ảnh</span> hoặc kéo thả biểu tượng vào đây
+                                <Typography variant="body2" sx={{ color: "#374151", textAlign: "center" }}>
+                                    <span style={{ color: "#047857", fontWeight: 600 }}>Chọn tệp / Duyệt ảnh</span> hoặc kéo thả biểu tượng vào đây
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#94a3b8', mt: 0.5, textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ color: "#94a3b8", mt: 0.5, textAlign: "center" }}>
                                     Khuyến dùng tỷ lệ 1:1, ảnh vector SVG hoặc PNG nền trong suốt để hiển thị sắc nét nhất.
                                 </Typography>
                             </Box>
 
-                            {/* Thanh hiển thị tệp đã chọn */}
-
+                            {/* Preview ảnh */}
                             {previewAnh && (
                                 <Box
                                     sx={{
                                         mt: 2,
                                         p: 1.5,
                                         borderRadius: 2,
-                                        backgroundColor: '#f0fdfa',
-                                        border: '1px solid #ccfbf1',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
+                                        backgroundColor: "#f0fdfa",
+                                        border: "1px solid #ccfbf1",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
                                         gap: 2,
                                     }}
                                 >
-                                    {/* Thông tin ảnh */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                         <Box
                                             component="img"
                                             src={previewAnh}
@@ -332,10 +306,10 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                                             sx={{
                                                 width: 65,
                                                 height: 65,
-                                                objectFit: 'contain',
+                                                objectFit: "contain",
                                                 borderRadius: 2,
-                                                backgroundColor: '#ffffff',
-                                                border: '1px solid #ccfbf1',
+                                                backgroundColor: "#ffffff",
+                                                border: "1px solid #ccfbf1",
                                             }}
                                         />
 
@@ -344,30 +318,29 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                                                 variant="body2"
                                                 sx={{
                                                     fontWeight: 600,
-                                                    color: '#0f172a',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
+                                                    color: "#0f172a",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
                                                     maxWidth: 250,
                                                 }}
                                             >
                                                 {fileAnh?.name}
                                             </Typography>
 
-                                            <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                            <Typography variant="caption" sx={{ color: "#64748b" }}>
                                                 {fileAnh && (fileAnh.size / 1024).toFixed(1)} KB
                                             </Typography>
                                         </Box>
                                     </Box>
 
-                                    {/* Trạng thái và nút xóa */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                         <Chip
                                             label="Sẵn sàng tải"
                                             size="small"
                                             sx={{
-                                                backgroundColor: '#2dd4bf',
-                                                color: '#ffffff',
+                                                backgroundColor: "#2dd4bf",
+                                                color: "#ffffff",
                                                 fontWeight: 600,
                                                 fontSize: 11,
                                             }}
@@ -380,8 +353,8 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                                                 setPreviewAnh(null);
                                             }}
                                             sx={{
-                                                color: '#94a3b8',
-                                                '&:hover': { color: '#ef4444' },
+                                                color: "#94a3b8",
+                                                "&:hover": { color: "#ef4444" },
                                             }}
                                         >
                                             <Trash2 size={18} />
@@ -393,46 +366,41 @@ export default function ModalThemTheLoai({ open, handleClose, onSuccess }: { ope
                     </Box>
                 </DialogContent>
 
-                {/* Hành động dưới Modal */}
-                <DialogActions sx={{ px: 2, pt: 2, pb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                <DialogActions sx={{ px: 2, pt: 2, pb: 1, display: "flex", justifyContent: "space-between" }}>
                     <Button
                         variant="outlined"
                         onClick={handleClose}
                         sx={{
-                            color: '#475569',
-                            borderColor: '#cbd5e1',
-                            textTransform: 'none',
+                            color: "#475569",
+                            borderColor: "#cbd5e1",
+                            textTransform: "none",
                             borderRadius: 2,
                             px: 3,
-                            '&:hover': { borderColor: '#94a3b8', backgroundColor: '#f8fafc' },
+                            "&:hover": { borderColor: "#94a3b8", backgroundColor: "#f8fafc" },
                         }}
                     >
                         Hủy bỏ
                     </Button>
 
-                    <Box sx={{ display: 'flex', gap: 1.5 }}>
-
-                        <Button
-                            variant="contained"
-                            startIcon={<Check size={18} />}
-                            onClick={handleSubmit(handleLuuTheLoai)}
-                            disabled={dangLuu}
-                            sx={{
-                                backgroundColor: '#064e3b',
-                                color: '#ffffff',
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                borderRadius: 2,
-                                px: 3,
-                                '&:hover': { backgroundColor: '#022c22' },
-                            }}
-                        >
-                            Lưu thể loại
-                        </Button>
-                    </Box>
+                    <Button
+                        variant="contained"
+                        startIcon={<Check size={18} />}
+                        onClick={handleLuuTheLoai}
+                        disabled={dangLuu}
+                        sx={{
+                            backgroundColor: "#064e3b",
+                            color: "#ffffff",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            borderRadius: 2,
+                            px: 3,
+                            "&:hover": { backgroundColor: "#022c22" },
+                        }}
+                    >
+                        Lưu thể loại
+                    </Button>
                 </DialogActions>
             </Dialog>
         </React.Fragment>
     );
 }
-

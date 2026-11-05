@@ -11,6 +11,8 @@ import type { TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import { getAllTheLoai } from '../../../services/theLoaiTienIchService';
 import Swal from 'sweetalert2';
 import { saveTienIch } from '../../../services/tienIchService';
+import { tienIchSchema } from '../../../schemas/tienIchSchema';
+import { alertModal, toast } from '../../../utils/toast';
 
 
 const Transition = React.forwardRef(function Transition(
@@ -36,6 +38,9 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
     const [danhSachTheLoai, setDanhSachTheLoai] = useState<TheLoaiTienIch[]>([])
 
     const [dangLuu, setDangLuu] = useState(false);
+
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
     const layDanhSachTheLoai = async () => {
         try {
             const data = await getAllTheLoai();
@@ -48,10 +53,15 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
     useEffect(() => {
         if (open) {
             layDanhSachTheLoai();
+            setErrors({});
         }
     }, [open]);
 
-
+    const handleCancel = () => {
+        setFormData(initialForm);
+        setErrors({});
+        handleClose();
+    };
 
     const handleChange = (field: keyof TienIchRequest) =>
         (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: unknown } }) => {
@@ -60,54 +70,59 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                 ...prev,
                 [field]: value,
             }));
+
+            if (errors[field]) {
+                setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next[field];
+                    return next;
+                });
+            }
         };
 
     const handleSubmit = async () => {
-       
-        console.log(formData);
+        const validationResult = tienIchSchema.safeParse(formData);
+
+        if (!validationResult.success) {
+            const newErrors: Record<string, string> = {};
+            for (const issue of validationResult.error.issues) {
+                const fieldName = issue.path[0] as string;
+                if (!newErrors[fieldName]) {
+                    newErrors[fieldName] = issue.message;
+                }
+            }
+            setErrors(newErrors);
+            return;
+        }
+
+        const validData = validationResult.data;
 
         try {
             setDangLuu(true);
 
-            const dto: TienIchRequest = {
-                tenTienIch: formData.tenTienIch.trim(),
-                moTa: formData.moTa.trim(),
-                matheloai: Number(formData.matheloai)
-            };
+            await saveTienIch(validData);
 
-            await saveTienIch(dto);
+            await toast.success(
+                "Thêm tiện ích thành công!"
+            );
 
-            await Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: "Thêm tiện ích thành công!",
-                text: "Tiện ích mới đã được lưu vào hệ thống.",
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true,
-            });
-
-            // Reset form
             setFormData(initialForm);
-
-            // Đóng modal
+            setErrors({});
             handleClose();
         } catch (error: any) {
-            console.error("Loi them tien ich", error)
-            Swal.fire({
-                icon: "error",
-                title: "Thêm tiện ích thất bại!",
-                text: typeof error.response?.data === "string"
+            console.error("Loi them tien ich", error);
+
+            const errorMessage =
+                typeof error.response?.data === "string"
                     ? error.response.data
-                    : "Đã xảy ra lỗi khi thêm tiện ích. Vui lòng thử lại.",
-                confirmButtonText: "Đóng",
-                confirmButtonColor: "#dc2626"
-            });
+                    : error.response?.data?.message ??
+                    "Đã xảy ra lỗi khi thêm tiện ích. Vui lòng thử lại.";
+
+            alertModal.error("Thêm tiện ích thất bại!", errorMessage);
         } finally {
-            setDangLuu(false)
+            setDangLuu(false);
         }
-    }
+    };
 
     return (
         <Dialog
@@ -185,12 +200,15 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                             displayEmpty
                             value={formData.matheloai}
                             onChange={(event) => {
-                                setFormData(prev => ({
-                                    ...prev,
-                                    matheloai: String(event.target.value) === ""
-                                        ? ""
-                                        : Number(event.target.value)
-                                }));
+                                const val = String(event.target.value) === "" ? "" : Number(event.target.value);
+                                setFormData((prev) => ({ ...prev, matheloai: val }));
+                                if (errors.matheloai) {
+                                    setErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next.matheloai;
+                                        return next;
+                                    });
+                                }
                             }}
                             renderValue={(selected) => {
                                 if (!selected) {
@@ -248,6 +266,8 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                         placeholder="Ví dụ: Bồn tắm gỗ Pơ-mu ngâm thảo mộc"
                         value={formData.tenTienIch}
                         onChange={handleChange('tenTienIch')}
+                        error={Boolean(errors.tenTienIch)}
+                        helperText={errors.tenTienIch}
                         slotProps={{ htmlInput: { maxLength: 60 } }}
                         sx={{
                             bgcolor: '#f9fafb',
@@ -279,6 +299,8 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                         placeholder="Nhập mô tả chi tiết về tiện ích này..."
                         value={formData.moTa}
                         onChange={handleChange('moTa')}
+                        error={Boolean(errors.moTa)}
+                        helperText={errors.moTa}
                         slotProps={{ htmlInput: { maxLength: 500 } }}
                         sx={{
                             bgcolor: '#f9fafb',
@@ -297,7 +319,7 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
             {/* Footer Actions (Đã bỏ checkbox và nút lưu nháp) */}
             <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
                 <Button
-                    onClick={handleClose}
+                    onClick={handleCancel}
                     sx={{
                         color: '#374151',
                         bgcolor: '#f3f4f6',

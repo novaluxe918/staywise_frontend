@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { th } from "zod/v4/locales";
 
 export const theLoaiTienIchSchema = z.object({
     tenTheLoai : z

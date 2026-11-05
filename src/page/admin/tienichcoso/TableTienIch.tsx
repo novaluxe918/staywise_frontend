@@ -8,7 +8,6 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TablePagination,
     TextField,
     MenuItem,
     Select,
@@ -20,6 +19,8 @@ import {
     Typography,
     InputAdornment,
     CircularProgress,
+    Pagination,
+    type SelectChangeEvent,
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -35,20 +36,22 @@ import type { TienIch } from '../../../types/tienIch';
 import { getAllTienIch } from '../../../services/tienIchService';
 
 function TableTienIch() {
-
-    const [danhSachTienIch, setDsTienIch] = useState<TienIch[]>([])
+    const [danhSachTienIch, setDsTienIch] = useState<TienIch[]>([]);
     const [tongSoLuong, setTongSoLuong] = useState<number>(0);
+    const [tongSoTrang, setTongSoTrang] = useState<number>(0);
+
     const [dangTai, setDangTai] = useState<boolean>(false);
 
     const [tuKhoa, setTuKhoa] = useState<string>('');
     const [tuKhoaDebounce, setTuKhoaDebounce] = useState<string>('');
+
     const [trang, setTrang] = useState<number>(0);
     const [soDongMoiTrang, setSoDongMoiTrang] = useState<number>(5);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setTuKhoaDebounce(tuKhoa);
-            setTrang(0); // Reset về trang 1 (index 0) khi tìm từ khóa mới
+            setTuKhoaDebounce(tuKhoa.trim());
+            setTrang(0);
         }, 400);
 
         return () => clearTimeout(timer);
@@ -56,14 +59,27 @@ function TableTienIch() {
 
     const taiDuLieu = useCallback(async () => {
         setDangTai(true);
+
         try {
-            const data = await getAllTienIch(tuKhoaDebounce, trang, soDongMoiTrang);
-            setDsTienIch(data.content || []);
-            setTongSoLuong(data.totalElements || 0);
+            const data = await getAllTienIch(
+                tuKhoaDebounce,
+                trang,
+                soDongMoiTrang
+            );
+
+            console.log("API tiện ích:", data);
+
+            setDsTienIch(data.content ?? []);
+            setTongSoLuong(data.page.totalElements ?? 0);
+            setTongSoTrang(data.page.totalPages ?? 0);
+
         } catch (error) {
             console.error('Lỗi khi tải danh sách tiện ích:', error);
+
             setDsTienIch([]);
             setTongSoLuong(0);
+            setTongSoTrang(0);
+
         } finally {
             setDangTai(false);
         }
@@ -71,24 +87,30 @@ function TableTienIch() {
 
     useEffect(() => {
         taiDuLieu();
-    }, [taiDuLieu])
+    }, [taiDuLieu]);
 
 
-
-    const handleChangePage = (_event: unknown, newPage: number) => {
-        setTrang(newPage);
+    const handleChangePage = (
+        _event: React.ChangeEvent<unknown>,
+        newPage: number
+    ) => {
+        setTrang(newPage - 1);
     };
 
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSoDongMoiTrang(parseInt(event.target.value, 10));
+    // Thay đổi số dòng mỗi trang
+    const handleChangeRowsPerPage = (
+        event: SelectChangeEvent<number>
+    ) => {
+        setSoDongMoiTrang(Number(event.target.value));
         setTrang(0);
-    };;
+    };
+
 
     const handleLamMoi = () => {
         setTuKhoa('');
         setTuKhoaDebounce('');
         setTrang(0);
-    }
+    };
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* 1. Thanh công cụ tìm kiếm và Bộ lọc */}
@@ -247,7 +269,7 @@ function TableTienIch() {
                                     >
                                         {/* 1. STT: Đếm lại từ 1 theo từng trang */}
                                         <TableCell sx={{ fontWeight: 600, color: 'text.secondary', width: 60 }}>
-                                            {index + 1}
+                                            {trang * soDongMoiTrang + index + 1}
                                         </TableCell>
 
                                         {/* 2. Tên tiện ích */}
@@ -298,7 +320,7 @@ function TableTienIch() {
                                             </Typography>
                                         </TableCell>
 
-                                    
+
 
                                         <TableCell>
                                             <Chip
@@ -352,20 +374,53 @@ function TableTienIch() {
                     </TableBody>
                 </Table>
 
-               <TablePagination
-                    rowsPerPageOptions={[5, 10, 20]}
-                    component="div"
-                    count={tongSoLuong}
-                    rowsPerPage={soDongMoiTrang}
-                    page={trang}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    labelRowsPerPage="Số dòng mỗi trang:"
-                    labelDisplayedRows={({ from, to, count }) =>
-                        `Đang hiển thị ${count === 0 ? 0 : from}-${to} trên tổng số ${count} tiện ích`
-                    }
-                />
-            
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        px: 2,
+                        py: 1,
+                        flexWrap: 'wrap',
+                        gap: 2,
+                    }}
+                >
+                    {/* Thông tin hiển thị */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Đang hiển thị{' '}
+                            <strong>
+                                {tongSoLuong === 0 ? 0 : trang * soDongMoiTrang + 1}
+                                {' - '}
+                                {Math.min((trang + 1) * soDongMoiTrang, tongSoLuong)}
+                            </strong>
+                            {' '}trên tổng số{' '}
+                            <strong>{tongSoLuong}</strong> tiện ích
+                        </Typography>
+                        <FormControl size="small" sx={{ minWidth: 110 }}>
+                            <Select
+                                value={soDongMoiTrang}
+                                onChange={handleChangeRowsPerPage}
+                            >
+                                <MenuItem value={5}>5 dòng</MenuItem>
+                                <MenuItem value={10}>10 dòng</MenuItem>
+                                <MenuItem value={20}>20 dòng</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+
+                    {/* Các nút số trang */}
+                    <Pagination
+                        count={Math.max(1, Math.ceil(tongSoLuong / soDongMoiTrang))}
+                        page={trang + 1}
+                        onChange={handleChangePage}
+                        disabled={dangTai}
+                        color="primary"
+                        shape="rounded"
+                        showFirstButton
+                        showLastButton
+                    />
+                </Box>
             </TableContainer>
         </Box>
     );

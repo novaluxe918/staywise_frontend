@@ -1,5 +1,5 @@
 
-import type { TheLoaiTienIch, TheLoaiTienIchResponse } from "../types/theLoaiTienIch";
+import type { TheLoaiTienIch, TheLoaiTienIchDTO, TheLoaiTienIchResponse } from "../types/theLoaiTienIch";
 import api, { type PageResponse } from "./api";
 
 export const saveTheLoai = async (
@@ -15,11 +15,6 @@ export const saveTheLoai = async (
 
     formData.append("tenTheLoai", dto.tenTheLoai);
 
-    if (dto.hinhAnh) {
-        formData.append("hinhAnh", dto.hinhAnh);
-    }
-
-    // Gửi file ảnh
     if (file) {
         formData.append("file", file);
     }

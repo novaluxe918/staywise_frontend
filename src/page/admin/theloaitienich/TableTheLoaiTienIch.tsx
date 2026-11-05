@@ -8,9 +8,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Checkbox,
     Chip,
-    Switch,
     IconButton,
     TextField,
     InputAdornment,
@@ -26,14 +24,14 @@ import {
     type SelectChangeEvent,
 } from '@mui/material';
 
-
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { searchTheLoai, type PageResponse, type TheLoaiTienIch } from '../../../types/theLoaiTienIch';
+import { searchTheLoai, type TheLoaiTienIch } from '../../../types/theLoaiTienIch';
+import type { PageResponse } from '../../../services/api';
 
 interface Props {
     reloadTrigger?: number;
@@ -44,7 +42,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
     const [trangHienTai, setTrangHienTai] = useState<number>(0);
     const [soDongMoiTrang, setSoDongMoiTrang] = useState<number>(5);
     const [dataPage, setDataPage] = useState<PageResponse<TheLoaiTienIch> | null>(null);
-
     const [dangTai, setDangTai] = useState<boolean>(false);
 
 
@@ -65,8 +62,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
                 soDongMoiTrang
             );
 
-            console.log("API trả về:", res);
-
             setDataPage(res);
 
         } catch (error) {
@@ -76,30 +71,27 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
         }
     }, [tuKhoaDebounce, trangHienTai, soDongMoiTrang]);
 
+
     useEffect(() => {
         taiDuLieu();
     }, [taiDuLieu, reloadTrigger]);
+ 
 
     const handleChangePage = (_: unknown, newPage: number) => {
         setTrangHienTai(newPage - 1);
     };
+
     const handleChangeRowsPerPage = (event: SelectChangeEvent<number>) => {
         setSoDongMoiTrang(Number(event.target.value));
         setTrangHienTai(0);
     };
 
-    const totalElements = dataPage?.page.totalElements ?? 0;
-    const totalPages = dataPage?.page.totalPages ?? 0;
+   const totalElements = dataPage?.page.totalElements ?? 0;
+const totalPages = dataPage?.page.totalPages ?? 0;
 
     const fromIndex =
-        totalElements === 0
-            ? 0
-            : trangHienTai * soDongMoiTrang + 1;
-
-    const toIndex = Math.min(
-        (trangHienTai + 1) * soDongMoiTrang,
-        totalElements
-    );
+        totalElements === 0 ? 0 : trangHienTai * soDongMoiTrang + 1;
+    const toIndex = Math.min((trangHienTai + 1) * soDongMoiTrang, totalElements);
 
     return (
         <Box sx={{ p: { xs: 2, md: 3.5 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
@@ -210,7 +202,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
                 </Stack>
             </Stack>
 
-            {/* 2. Main Table Card */}
             <Card
                 elevation={0}
                 sx={{
@@ -254,7 +245,7 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                dataPage.content.map((item, index) => (
+                                dataPage.content.map((item: TheLoaiTienIch, index: number) => (
                                     <TableRow
                                         key={item.id}
                                         hover
@@ -404,7 +395,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
 
                     </Stack>
 
-                    {/* Phân trang */}
                     <Pagination
                         count={totalPages}
                         page={trangHienTai + 1}

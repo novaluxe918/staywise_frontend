@@ -7,14 +7,11 @@ export interface TheLoaiTienIchDTO{
     hinhAnh?: string;
 }
 
-
-
 export interface TheLoaiTienIch{
     id:number;
     tenTheLoai: string;
     hinhAnh: string;
     trangThai: TrangThai;
-
 }
 
 export interface TheLoaiTienIchResponse {
@@ -34,5 +31,6 @@ export const searchTheLoai = async (
             kichThuoc,
         },
     });
+    
     return response.data;
 };

@@ -3,7 +3,6 @@ import TableTheLoaiTienIch from './TableTheLoaiTienIch';
 import ModalThemTheLoai from './ModalThemTheLoai';
 import Button from '@mui/material/Button';
 import { Box, Stack, Typography } from '@mui/material';
-import type { TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import { CirclePlus } from 'lucide-react';
 
 function QuanLyTheLoai() {
@@ -22,6 +21,7 @@ function QuanLyTheLoai() {
         handleClose();
         setReloadTrigger((prev) => prev + 1);
     }
+    
     return (
         <div className="p-6 bg-slate-50/50 min-h-screen">
             {/* Thanh tiêu đề và nút Thêm mới */}
