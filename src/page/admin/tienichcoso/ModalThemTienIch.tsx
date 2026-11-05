@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, MenuItem, Select, Slide, TextField, Typography } from '@mui/material';
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormHelperText, MenuItem, Select, Slide, TextField, Typography } from '@mui/material';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SubjectIcon from '@mui/icons-material/Subject';
@@ -9,10 +9,12 @@ import { CheckIcon } from 'lucide-react';
 import type { TienIchRequest } from '../../../types/tienIch';
 import type { TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import { getAllTheLoai } from '../../../services/theLoaiTienIchService';
-import Swal from 'sweetalert2';
 import { saveTienIch } from '../../../services/tienIchService';
 import { tienIchSchema } from '../../../schemas/tienIchSchema';
 import { alertModal, toast } from '../../../utils/toast';
+import type z from 'zod';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 
 const Transition = React.forwardRef(function Transition(
@@ -25,92 +27,84 @@ const Transition = React.forwardRef(function Transition(
 });
 
 
-function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: () => void }) {
-    const initialForm: TienIchRequest = {
-        tenTienIch: "",
-        moTa: "",
-        matheloai: ""
-    };
+function ModalThemTienIch({
+    open,
+    handleClose
+}: {
+    open: boolean;
+    handleClose: () => void;
+}) {
+    const {
+        register,
+        control,
+        handleSubmit: handleFormSubmit,
+        reset,
+        watch,
+        formState: { errors },
+    } = useForm<
+        z.input<typeof tienIchSchema>,
+        any,
+        z.output<typeof tienIchSchema>
+    >({
+        resolver: zodResolver(tienIchSchema),
+        defaultValues: {
+            tenTienIch: "",
+            moTa: "",
+            matheloai: "",
+        },
+        mode: "onBlur",
+    });
 
-    const [formData, setFormData] =
-        useState<TienIchRequest>(initialForm);
-
-    const [danhSachTheLoai, setDanhSachTheLoai] = useState<TheLoaiTienIch[]>([])
+    const [danhSachTheLoai, setDanhSachTheLoai] =
+        useState<TheLoaiTienIch[]>([]);
 
     const [dangLuu, setDangLuu] = useState(false);
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const tenTienIch = watch("tenTienIch");
+    const moTa = watch("moTa");
 
     const layDanhSachTheLoai = async () => {
         try {
             const data = await getAllTheLoai();
-
             setDanhSachTheLoai(data);
         } catch (error) {
             console.error("Lỗi lấy thể loại:", error);
         }
     };
+
     useEffect(() => {
         if (open) {
             layDanhSachTheLoai();
-            setErrors({});
+        } else {
+            reset();
         }
-    }, [open]);
+    }, [open, reset]);
 
     const handleCancel = () => {
-        setFormData(initialForm);
-        setErrors({});
+        reset();
         handleClose();
     };
 
-    const handleChange = (field: keyof TienIchRequest) =>
-        (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: unknown } }) => {
-            const value = event.target.value as TienIchRequest[keyof TienIchRequest];
-            setFormData((prev) => ({
-                ...prev,
-                [field]: value,
-            }));
-
-            if (errors[field]) {
-                setErrors((prev) => {
-                    const next = { ...prev };
-                    delete next[field];
-                    return next;
-                });
-            }
-        };
-
-    const handleSubmit = async () => {
-        const validationResult = tienIchSchema.safeParse(formData);
-
-        if (!validationResult.success) {
-            const newErrors: Record<string, string> = {};
-            for (const issue of validationResult.error.issues) {
-                const fieldName = issue.path[0] as string;
-                if (!newErrors[fieldName]) {
-                    newErrors[fieldName] = issue.message;
-                }
-            }
-            setErrors(newErrors);
-            return;
-        }
-
-        const validData = validationResult.data;
-
+    // Lưu tiện ích
+    const handleLuuTienIch = handleFormSubmit(async (data) => {
         try {
             setDangLuu(true);
 
-            await saveTienIch(validData);
+            const payload: TienIchRequest = {
+                tenTienIch: data.tenTienIch,
+                moTa: data.moTa,
+                matheloai: data.matheloai,
+            };
 
-            await toast.success(
-                "Thêm tiện ích thành công!"
-            );
+            await saveTienIch(payload);
 
-            setFormData(initialForm);
-            setErrors({});
+            toast.success("Thêm tiện ích thành công!");
+
+            reset();
             handleClose();
+
         } catch (error: any) {
-            console.error("Loi them tien ich", error);
+            console.error("Lỗi thêm tiện ích", error);
 
             const errorMessage =
                 typeof error.response?.data === "string"
@@ -119,10 +113,11 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                     "Đã xảy ra lỗi khi thêm tiện ích. Vui lòng thử lại.";
 
             alertModal.error("Thêm tiện ích thất bại!", errorMessage);
+
         } finally {
             setDangLuu(false);
         }
-    };
+    });
 
     return (
         <Dialog
@@ -195,52 +190,66 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                             Phân loại chuẩn Staywise
                         </Typography>
                     </Box>
-                    <FormControl fullWidth size="small">
-                        <Select
-                            displayEmpty
-                            value={formData.matheloai}
-                            onChange={(event) => {
-                                const val = String(event.target.value) === "" ? "" : Number(event.target.value);
-                                setFormData((prev) => ({ ...prev, matheloai: val }));
-                                if (errors.matheloai) {
-                                    setErrors((prev) => {
-                                        const next = { ...prev };
-                                        delete next.matheloai;
-                                        return next;
-                                    });
-                                }
-                            }}
-                            renderValue={(selected) => {
-                                if (!selected) {
-                                    return (
-                                        <Typography color="text.disabled">
-                                            Chọn thể loại tiện ích
-                                        </Typography>
-                                    );
-                                }
-                                const theLoai = danhSachTheLoai.find(
-                                    item => item.id === selected
-                                );
+                    <FormControl
+                        fullWidth
+                        size="small"
+                        error={!!errors.matheloai}
+                    >
+                        <Controller
+                            name="matheloai"
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    {...field}
+                                    displayEmpty
+                                    value={field.value}
+                                    onChange={(event) => {
+                                        field.onChange(event.target.value);
+                                    }}
+                                    renderValue={(selected) => {
+                                        if (selected === "" || selected === undefined) {
+                                            return (
+                                                <Typography color="text.disabled">
+                                                    Chọn thể loại tiện ích
+                                                </Typography>
+                                            );
+                                        }
 
-                                return theLoai?.tenTheLoai ?? "";
-                            }}
-                            sx={{
-                                borderRadius: 2,
-                                bgcolor: '#f9fafb',
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d1d5db' }
-                            }}
-                        >
-                            <MenuItem value="">
-                                Chọn thể loại tiện ích
-                            </MenuItem>
+                                        const theLoai = danhSachTheLoai.find(
+                                            item => item.id === Number(selected)
+                                        );
 
-                            {danhSachTheLoai.map((item) => (
-                                <MenuItem key={item.id} value={item.id}>
-                                    {item.tenTheLoai}
-                                </MenuItem>
-                            ))}
+                                        return theLoai?.tenTheLoai ?? "";
+                                    }}
+                                    sx={{
+                                        borderRadius: 2,
+                                        bgcolor: "#f9fafb",
+                                        "& .MuiOutlinedInput-notchedOutline": {
+                                            borderColor: "#d1d5db"
+                                        }
+                                    }}
+                                >
+                                    <MenuItem value="">
+                                        Chọn thể loại tiện ích
+                                    </MenuItem>
 
-                        </Select>
+                                    {danhSachTheLoai.map((item) => (
+                                        <MenuItem
+                                            key={item.id}
+                                            value={String(item.id)}
+                                        >
+                                            {item.tenTheLoai}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            )}
+                        />
+
+                        {errors.matheloai && (
+                            <FormHelperText>
+                                {errors.matheloai.message}
+                            </FormHelperText>
+                        )}
                     </FormControl>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75, color: '#0d9488' }}>
                         <VerifiedUserOutlinedIcon sx={{ fontSize: 16 }} />
@@ -257,17 +266,16 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                             Tên tiện ích  <span style={{ color: '#ef4444' }}>*</span>
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            {formData.tenTienIch.length}/60
+                            {(tenTienIch ?? "").length}/60
                         </Typography>
                     </Box>
                     <TextField
                         fullWidth
                         size="small"
                         placeholder="Ví dụ: Bồn tắm gỗ Pơ-mu ngâm thảo mộc"
-                        value={formData.tenTienIch}
-                        onChange={handleChange('tenTienIch')}
-                        error={Boolean(errors.tenTienIch)}
-                        helperText={errors.tenTienIch}
+                        {...register("tenTienIch")}
+                        error={!!errors.tenTienIch}
+                        helperText={errors.tenTienIch?.message}
                         slotProps={{ htmlInput: { maxLength: 60 } }}
                         sx={{
                             bgcolor: '#f9fafb',
@@ -289,7 +297,7 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                             Mô tả tiện nghi
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            {formData.moTa.length} / 500 ký tự
+                            {(moTa ?? "").length} / 500 ký tự
                         </Typography>
                     </Box>
                     <TextField
@@ -297,10 +305,9 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                         multiline
                         rows={4}
                         placeholder="Nhập mô tả chi tiết về tiện ích này..."
-                        value={formData.moTa}
-                        onChange={handleChange('moTa')}
-                        error={Boolean(errors.moTa)}
-                        helperText={errors.moTa}
+                        {...register("moTa")}
+                        error={!!errors.moTa}
+                        helperText={errors.moTa?.message}
                         slotProps={{ htmlInput: { maxLength: 500 } }}
                         sx={{
                             bgcolor: '#f9fafb',
@@ -334,7 +341,7 @@ function ModalThemTienIch({ open, handleClose }: { open: boolean; handleClose: (
                     Hủy bỏ
                 </Button>
                 <Button
-                    onClick={handleSubmit}
+                    onClick={handleLuuTienIch}
                     disabled={dangLuu}
                     variant="contained"
                     startIcon={<CheckIcon />}
