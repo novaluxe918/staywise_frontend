@@ -44,3 +44,23 @@ export const getAllTheLoai = async (): Promise<TheLoaiTienIch[]> => {
 
     return response.data.content;
 };
+
+export const searchTheLoai = async (
+    tuKhoa: string = '',
+    trang: number = 0,
+    kichThuoc: number = 5
+): Promise<PageResponse<TheLoaiTienIch>> => {
+    const response = await api.get<PageResponse<TheLoaiTienIch>>('/theloaitienich/search', {
+        params: {
+            tuKhoa,
+            trang,
+            kichThuoc,
+        },
+    });
+    
+    return response.data;
+};
+
+export const xoaTheLoai = async(id: number) => {
+    return await api.delete(`theloaitienich/xoa/${id}`)
+}

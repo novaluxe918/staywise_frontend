@@ -30,13 +30,16 @@ import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { searchTheLoai, type TheLoaiTienIch } from '../../../types/theLoaiTienIch';
+import { type TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import type { PageResponse } from '../../../services/api';
+import { searchTheLoai, xoaTheLoai } from '../../../services/theLoaiTienIchService';
+import { toast } from '../../../utils/toast';
 
 interface Props {
     reloadTrigger?: number;
+    handleUpdate: (item: TheLoaiTienIch) => void;
 }
-export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
+export default function TableTheLoaiTienIch({ reloadTrigger = 0, handleUpdate }: Props) {
     const [tuKhoaInput, setTuKhoaInput] = useState<string>('');
     const [tuKhoaDebounce, setTuKhoaDebounce] = useState<string>('');
     const [trangHienTai, setTrangHienTai] = useState<number>(0);
@@ -70,12 +73,23 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
             setDangTai(false);
         }
     }, [tuKhoaDebounce, trangHienTai, soDongMoiTrang]);
-
+    
+    const handleXoa  = async(id:number) => {
+        try{
+            await xoaTheLoai(id)
+            toast.success("Xóa thành công!");
+            await taiDuLieu();
+            
+        } catch{
+            toast.error("Xóa thất bại");
+            
+        }
+    }
 
     useEffect(() => {
         taiDuLieu();
     }, [taiDuLieu, reloadTrigger]);
- 
+
 
     const handleChangePage = (_: unknown, newPage: number) => {
         setTrangHienTai(newPage - 1);
@@ -86,8 +100,8 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0 }: Props) {
         setTrangHienTai(0);
     };
 
-   const totalElements = dataPage?.page.totalElements ?? 0;
-const totalPages = dataPage?.page.totalPages ?? 0;
+    const totalElements = dataPage?.page.totalElements ?? 0;
+    const totalPages = dataPage?.page.totalPages ?? 0;
 
     const fromIndex =
         totalElements === 0 ? 0 : trangHienTai * soDongMoiTrang + 1;
@@ -319,7 +333,7 @@ const totalPages = dataPage?.page.totalPages ?? 0;
                                                 <IconButton
                                                     size="small"
                                                     title="Chỉnh sửa"
-                                                    onClick={() => console.log("Sửa:", item.id)}
+                                                    onClick={() => handleUpdate(item)}
                                                     sx={{
                                                         color: '#64748b',
                                                         borderRadius: '8px',
@@ -332,7 +346,7 @@ const totalPages = dataPage?.page.totalPages ?? 0;
                                                 <IconButton
                                                     size="small"
                                                     title="Xóa"
-                                                    onClick={() => console.log("Xóa:", item.id)}
+                                                    onClick={() => handleXoa(item.id)}
                                                     sx={{
                                                         color: '#64748b',
                                                         borderRadius: '8px',

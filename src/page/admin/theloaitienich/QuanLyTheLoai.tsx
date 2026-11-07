@@ -4,14 +4,22 @@ import ModalThemTheLoai from './ModalThemTheLoai';
 import Button from '@mui/material/Button';
 import { Box, Stack, Typography } from '@mui/material';
 import { CirclePlus } from 'lucide-react';
+import type { TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 
 function QuanLyTheLoai() {
     const [open, setOpen] = React.useState(false);
     const [reloadTrigger, setReloadTrigger] = useState(0);
+    const [updateTheLoai, setUpdateTheLoai] = useState<TheLoaiTienIch | null>(null);
     
     const handleClickOpen = () => {
+        setUpdateTheLoai(null);
         setOpen(true);
     };
+
+    const handleUpdate = (item: TheLoaiTienIch) => {
+         setUpdateTheLoai(item);
+         setOpen(true);
+    }
 
     const handleClose = () => {
         setOpen(false);
@@ -60,10 +68,10 @@ function QuanLyTheLoai() {
             </Stack>
 
             {/* Hiển thị bảng danh sách */}
-            <TableTheLoaiTienIch reloadTrigger={reloadTrigger} />
+            <TableTheLoaiTienIch reloadTrigger={reloadTrigger} handleUpdate={handleUpdate} />
 
             {/* Dialog / Modal Thêm mới */}
-            <ModalThemTheLoai open={open} handleClose={handleClose} onSuccess={handleSuccsess} />
+            <ModalThemTheLoai open={open} handleClose={handleClose} onSuccess={handleSuccsess} duLieuUpdate={updateTheLoai} />
         </div>
     );
 }

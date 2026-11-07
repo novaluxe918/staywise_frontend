@@ -1,4 +1,4 @@
-import api, { type PageResponse } from "../services/api";
+
 import type { TrangThai } from "./enums";
 
 export interface TheLoaiTienIchDTO{
@@ -19,18 +19,3 @@ export interface TheLoaiTienIchResponse {
 }
 
 
-export const searchTheLoai = async (
-    tuKhoa: string = '',
-    trang: number = 0,
-    kichThuoc: number = 5
-): Promise<PageResponse<TheLoaiTienIch>> => {
-    const response = await api.get<PageResponse<TheLoaiTienIch>>('/theloaitienich/search', {
-        params: {
-            tuKhoa,
-            trang,
-            kichThuoc,
-        },
-    });
-    
-    return response.data;
-};

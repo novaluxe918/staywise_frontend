@@ -15,11 +15,12 @@ import {
 import { Check, Shapes, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { theLoaiTienIchSchema, type TheLoaiTienIchForm } from "../../../schemas/theLoaiTienIchSchema";
 import { toast } from "../../../utils/toast";
-import type { TheLoaiTienIchDTO } from "../../../types/theLoaiTienIch";
+import type { TheLoaiTienIch, TheLoaiTienIchDTO } from "../../../types/theLoaiTienIch";
 import { saveTheLoai } from "../../../services/theLoaiTienIchService";
 import type { TransitionProps } from "@mui/material/transitions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useUploadAnh } from "../../../hooks/useUploadAnh";
 
 
 const Transition = React.forwardRef(function Transition(
@@ -35,10 +36,12 @@ export default function ModalThemTheLoai({
     open,
     handleClose,
     onSuccess,
+    duLieuUpdate
 }: {
     open: boolean;
     handleClose: () => void;
     onSuccess: () => void;
+    duLieuUpdate: TheLoaiTienIch | null
 }) {
     const {
         register,
@@ -52,72 +55,63 @@ export default function ModalThemTheLoai({
         },
         mode: "onBlur"
     });
-    const [fileAnh, setFileAnh] = useState<File | null>(null);
+    const {
+        fileAnh,
+        previewAnh,
+        setFileAnh,
+        setPreviewAnh,
+        handleChonAnh,
+        xoaAnh,
+    } = useUploadAnh();
     const [dangLuu, setDangLuu] = useState<boolean>(false);
-    const [previewAnh, setPreviewAnh] = useState<string | null>(null);
 
-    const DINH_DANG_HOP_LE = ["image/png", "image/jpeg", "image/svg+xml"];
-    const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-    const handleChonAnh = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!DINH_DANG_HOP_LE.includes(file.type)) {
-            toast.warning("Chỉ chấp nhận ảnh SVG, PNG, JPG!");
-            e.target.value = "";
-            return;
-        }
-
-        if (file.size > MAX_FILE_SIZE) {
-            toast.warning("Dung lượng ảnh không được vượt quá 2MB!");
-            e.target.value = "";
-            return;
-        }
-
-        setFileAnh(file);
-        setPreviewAnh(URL.createObjectURL(file));
-    };
-
-    const resetForm = () => {
-        reset({
-            tenTheLoai: "",
-        });
-        setFileAnh(null);
-        if (previewAnh) {
-            URL.revokeObjectURL(previewAnh);
-        }
-        setPreviewAnh(null);
-    };
 
     useEffect(() => {
-        if (!open) {
-            resetForm();
+        if (!open) return;
+
+        if (duLieuUpdate) {
+            reset({
+                tenTheLoai: duLieuUpdate.tenTheLoai
+            });
+
+            setPreviewAnh(duLieuUpdate.hinhAnh);
+            setFileAnh(null);
+
+        } else {
+            reset({
+                tenTheLoai: ""
+            });
+
+            setPreviewAnh(null);
+            setFileAnh(null);
         }
-    }, [open]);
+    }, [open, duLieuUpdate, reset]);
 
     const handleLuuTheLoai = handleSubmit(async (data) => {
-        if (!fileAnh) {
-            toast.warning("Vui lòng chọn ảnh!");
-            return;
-        }
-
         try {
             setDangLuu(true);
 
             const dto: TheLoaiTienIchDTO = {
+                id: duLieuUpdate?.id ?? null,
                 tenTheLoai: data.tenTheLoai,
             };
 
             const response = await saveTheLoai(dto, fileAnh);
 
-            toast.success(response.message || "Thêm thể loại thành công!");
+            toast.success(
+                response.message ||
+                (duLieuUpdate
+                    ? "Cập nhật thể loại thành công!"
+                    : "Thêm thể loại thành công!")
+            );
+
             onSuccess();
 
         } catch (error: any) {
             toast.error(
                 error.response?.data?.message ||
-                "Không thể thêm thể loại tiện ích!"
+                "Không thể lưu thể loại tiện ích!"
             );
         } finally {
             setDangLuu(false);
@@ -149,10 +143,15 @@ export default function ModalThemTheLoai({
             >
                 <DialogTitle component="div" sx={{ px: 2, pt: 1, pb: 2 }}>
                     <Typography variant="h5" sx={{ fontWeight: 700, color: "#111827" }}>
-                        Thêm Thể loại Tiện ích
+                        {duLieuUpdate
+                            ? "Cập nhật Thể loại Tiện ích"
+                            : "Thêm Thể loại Tiện ích"}
                     </Typography>
+
                     <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
-                        Khai báo nhóm tiện ích lưu trú mới để phân loại và quản lý các tiện nghi tại cơ sở.
+                        {duLieuUpdate
+                            ? "Cập nhật thông tin nhóm tiện ích để quản lý và phân loại các tiện nghi tại cơ sở."
+                            : "Khai báo nhóm tiện ích lưu trú mới để phân loại và quản lý các tiện nghi tại cơ sở."}
                     </Typography>
                 </DialogTitle>
 
@@ -325,18 +324,19 @@ export default function ModalThemTheLoai({
                                                     maxWidth: 250,
                                                 }}
                                             >
-                                                {fileAnh?.name}
+                                                {fileAnh?.name || "Ảnh hiện tại"}
                                             </Typography>
 
                                             <Typography variant="caption" sx={{ color: "#64748b" }}>
-                                                {fileAnh && (fileAnh.size / 1024).toFixed(1)} KB
+                                                {fileAnh
+                                                    ? `${(fileAnh.size / 1024).toFixed(1)} KB`
+                                                    : "Ảnh đang được sử dụng"}
                                             </Typography>
                                         </Box>
                                     </Box>
-
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                         <Chip
-                                            label="Sẵn sàng tải"
+                                            label={duLieuUpdate ? "Ảnh hiện tại" : "Sẵn sàng tải"}
                                             size="small"
                                             sx={{
                                                 backgroundColor: "#2dd4bf",
@@ -346,19 +346,20 @@ export default function ModalThemTheLoai({
                                             }}
                                         />
 
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => {
-                                                setFileAnh(null);
-                                                setPreviewAnh(null);
-                                            }}
-                                            sx={{
-                                                color: "#94a3b8",
-                                                "&:hover": { color: "#ef4444" },
-                                            }}
-                                        >
-                                            <Trash2 size={18} />
-                                        </IconButton>
+                                        {!duLieuUpdate && (
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    xoaAnh
+                                                }}
+                                                sx={{
+                                                    color: "#94a3b8",
+                                                    "&:hover": { color: "#ef4444" },
+                                                }}
+                                            >
+                                                <Trash2 size={18} />
+                                            </IconButton>
+                                        )}
                                     </Box>
                                 </Box>
                             )}
@@ -397,7 +398,11 @@ export default function ModalThemTheLoai({
                             "&:hover": { backgroundColor: "#022c22" },
                         }}
                     >
-                        Lưu thể loại
+                        {dangLuu
+                            ? "Đang lưu..."
+                            : duLieuUpdate
+                                ? "Cập nhật"
+                                : "Lưu thể loại"}
                     </Button>
                 </DialogActions>
             </Dialog>
