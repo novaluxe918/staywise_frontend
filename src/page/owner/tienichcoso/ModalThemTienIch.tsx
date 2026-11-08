@@ -114,32 +114,46 @@ function ModalThemTienIch({
             const payload: TienIchRequest = {
                 tenTienIch: data.tenTienIch,
                 moTa: data.moTa,
-                matheloai: data.matheloai,
+                matheloai: Number(data.matheloai),
             };
 
-            await saveTienIch(payload);
+            await saveTienIch({
+                ...payload,
+                ...(duLieuUpdate && { id: duLieuUpdate.id })
+            });
 
-            toast.success("Thêm tiện ích thành công!");
+            toast.success(
+                duLieuUpdate
+                    ? "Cập nhật tiện ích thành công!"
+                    : "Thêm tiện ích thành công!"
+            );
 
             reset();
             handleClose();
 
+            onSuccess(); // Load lại danh sách tiện ích
+
         } catch (error: any) {
-            console.error("Lỗi thêm tiện ích", error);
+            console.error("Lỗi lưu tiện ích", error);
 
             const errorMessage =
                 typeof error.response?.data === "string"
                     ? error.response.data
                     : error.response?.data?.message ??
-                    "Đã xảy ra lỗi khi thêm tiện ích. Vui lòng thử lại.";
+                    "Đã xảy ra lỗi khi lưu tiện ích. Vui lòng thử lại.";
 
-            alertModal.error("Thêm tiện ích thất bại!", errorMessage);
+            alertModal.error(
+                duLieuUpdate
+                    ? "Cập nhật tiện ích thất bại!"
+                    : "Thêm tiện ích thất bại!",
+                errorMessage
+            );
 
         } finally {
             setDangLuu(false);
         }
     });
-
+    
     return (
         <Dialog
             open={open}

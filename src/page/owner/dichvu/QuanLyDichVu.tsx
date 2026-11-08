@@ -1,16 +1,30 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { CirclePlus } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import ModalThemDichVu from './ModalThemDichVu';
 import TableDichVu from './TableDichVu';
+import type { DichVu } from '../../../types/dichVu';
 
 function QuanLyDichVu() {
     const [open, setOpen] = React.useState(false);
+      const [reloadTrigger, setReloadTrigger] = useState(0);
+      const [updateDichVu, setUpdateDichVu] = useState<DichVu | null>(null);
+
+    const handleSuccess = () => {
+        setReloadTrigger(prev => prev + 1);
+    };
+
 
     const handleClickOpen = () => {
+        setUpdateDichVu(null);
         setOpen(true);
     };
 
+    const handleUpdate = (item: DichVu) => {
+        setUpdateDichVu(item)
+        setOpen(true);
+    }
+    
     const handleClose = () => {
         setOpen(false);
     };
@@ -50,9 +64,9 @@ function QuanLyDichVu() {
 
             {/* Hiển thị bảng danh sách */}
 
-            <TableDichVu />
+            <TableDichVu reloadTrigger={reloadTrigger}  handleUpdate={handleUpdate}/>
 
-            <ModalThemDichVu open={open} handleClose={handleClose} />
+            <ModalThemDichVu open={open} handleClose={handleClose} onSuccess={handleSuccess}  duLieuUpdate={updateDichVu}/>
 
         </div>
     );

@@ -20,6 +20,7 @@ import { dichVuSchema, type DichVuFormValues } from '../../../schemas/dichVuSche
 import { zodResolver } from '@hookform/resolvers/zod';
 import { saveDichVu } from '../../../services/dichVuService';
 import { toast } from '../../../utils/toast';
+import type { DichVu } from '../../../types/dichVu';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -33,9 +34,13 @@ const Transition = React.forwardRef(function Transition(
 function ModalThemDichVu({
     open,
     handleClose,
+    onSuccess,
+    duLieuUpdate
 }: {
     open: boolean;
     handleClose: () => void;
+    onSuccess: () => void;
+    duLieuUpdate: DichVu | null
 }) {
 
     const {
@@ -53,28 +58,51 @@ function ModalThemDichVu({
     });
 
     useEffect(() => {
-        if (open) {
+        if (!open) return;
+
+        if (duLieuUpdate) {
+
+            reset({
+                tenDichVu: duLieuUpdate.tenDichVu
+            });
+
+        } else {
             reset({
                 tenDichVu: ""
             });
         }
-    }, [open, reset]);
+    }, [open, duLieuUpdate, reset]);
 
     const tenDichVu = watch("tenDichVu");
     const maxLength = 100;
+
     const handleLuu = handleSubmit(async (data) => {
         try {
             await saveDichVu({
+                ...(duLieuUpdate && { id: duLieuUpdate.id }),
                 tenDichVu: data.tenDichVu
-            })
-            toast.success("Thêm dịch vụ thành công");
+            });
+
+            toast.success(
+                duLieuUpdate
+                    ? "Cập nhật dịch vụ thành công!"
+                    : "Thêm dịch vụ thành công!"
+            );
+
             reset();
             handleClose();
-        } catch (errors) {
-            toast.error("Thêm dịch vụ thất bại!");
+            onSuccess();
+
+        } catch (error) {
+            console.error("Lỗi lưu dịch vụ:", error);
+
+            toast.error(
+                duLieuUpdate
+                    ? "Cập nhật dịch vụ thất bại!"
+                    : "Thêm dịch vụ thất bại!"
+            );
         }
     });
-
     return (
         <React.Fragment>
             <Dialog
@@ -117,7 +145,7 @@ function ModalThemDichVu({
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a' }}>
-                                    Thông tin dịch vụ cơ sở
+                                    {duLieuUpdate ? "Cập nhật dịch vụ" : "Thêm dịch vụ"}
                                 </Typography>
                                 <Chip
                                     label="BẮT BUỘC"
@@ -221,7 +249,11 @@ function ModalThemDichVu({
                             }
                         }}
                     >
-                        {isSubmitting ? "Đang lưu..." : "Thêm dịch vụ"}
+                        {isSubmitting
+                            ? "Đang lưu..."
+                            : duLieuUpdate
+                                ? "Cập nhật"
+                                : "Lưu"}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -31,8 +31,12 @@ import type { DichVu } from '../../../types/dichVu';
 import { searchDichVu } from '../../../services/dichVuService';
 import { toast } from '../../../utils/toast';
 
+interface Props {
+    reloadTrigger: number;
+    handleUpdate: (item: DichVu) => void;
+}
 
-function TableDichVu() {
+function TableDichVu({ reloadTrigger, handleUpdate }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [dataPage, setDataPage] = useState<PageResponse<DichVu> | null>(null);
     const [page, setPage] = useState(0);
@@ -87,7 +91,7 @@ function TableDichVu() {
         };
 
         fetchDichVu();
-    }, [searchTerm, page, rowsPerPage]);
+    }, [searchTerm, page, rowsPerPage, reloadTrigger]);
     return (
         <Paper
             elevation={0}
@@ -207,7 +211,7 @@ function TableDichVu() {
                                         <IconButton
                                             size="small"
                                             title="Chỉnh sửa"
-                                            // onClick={() => handleUpdate(item)}
+                                            onClick={() => handleUpdate(item)}
                                             sx={{
                                                 color: '#64748b',
                                                 borderRadius: '8px',

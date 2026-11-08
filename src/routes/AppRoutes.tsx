@@ -14,6 +14,7 @@ import Home from "../page/client/home/Home";
 import QuanLyTheLoai from "../page/owner/theloaitienich/QuanLyTheLoai";
 import QuanLyTienIch from "../page/owner/tienichcoso/QuanLyTienIch";
 import QuanLyDichVu from "../page/owner/dichvu/QuanLyDichVu";
+import ProfilePage from "../page/owner/profile/ProfilePage";
 
 
 
@@ -43,6 +44,8 @@ function AppRoutes() {
         path="/dang-ky-homestay"
         element={<DangKyThongTin />}
       />
+
+      <Route path="/cap-nhat-thong-tin" element={<ProfilePage />}  />
 
     </Routes>
   );
