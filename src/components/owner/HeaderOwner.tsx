@@ -95,7 +95,7 @@ const handleLogout = async () => {
 
             <div className="hidden text-left sm:block">
               <p className="text-sm font-semibold">
-                {nguoiDung?.hoTen ?? "Chủ HomeStay"}
+            {nguoiDung?.hoTen?.replace(/\+/g, " ") ?? "Chủ HomeStay"}
               </p>
               <p className="text-xs text-gray-500">Chủ cơ sở</p>
             </div>

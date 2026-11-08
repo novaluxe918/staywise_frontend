@@ -1,18 +1,19 @@
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import LayoutAdmin from "../page/admin/layout/LayoutAdmin";
-import Dasboard from "../page/admin/dasboard/Dasboard";
+import LayoutAdmin from "../page/owner/layout/LayoutOwner";
+import Dasboard from "../page/owner/dasboard/Dasboard";
 import QuanLyPhong from "../page/admin/phong/QuanLyPhong";
 
 import DangKy from "../page/auth/dangky/DangKy";
 import DangNhap from "../page/auth/dangnhap/DangNhap";
-import DangKyThongTin from "../page/admin/homestay/DangKyThongTin";
+import DangKyThongTin from "../page/owner/homestay/DangKyThongTin";
 
 import ClientLayout from "../page/client/layout/ClientLayout";
 import Home from "../page/client/home/Home";
-import QuanLyTheLoai from "../page/admin/theloaitienich/QuanLyTheLoai";
-import QuanLyTienIch from "../page/admin/tienichcoso/QuanLyTienIch";
+import QuanLyTheLoai from "../page/owner/theloaitienich/QuanLyTheLoai";
+import QuanLyTienIch from "../page/owner/tienichcoso/QuanLyTienIch";
+import QuanLyDichVu from "../page/owner/dichvu/QuanLyDichVu";
 
 
 
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/quan-ly-phong" element={<QuanLyPhong />} />
         <Route path="/tien-ich" element={<QuanLyTheLoai />} />
         <Route path="/tien-ichcs" element={<QuanLyTienIch />} />
+        <Route path="/dich-vu" element={<QuanLyDichVu />} />
       </Route>
 
       {/* Đăng ký thông tin HomeStay */}

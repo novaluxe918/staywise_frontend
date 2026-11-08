@@ -2,6 +2,7 @@ import type { TrangThai } from "./enums";
 import type { TheLoaiTienIch } from "./theLoaiTienIch";
 
 export interface TienIchRequest {
+      id?: number | null;
     tenTienIch: string;
     moTa: string;
      matheloai: number | "";

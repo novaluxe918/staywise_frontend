@@ -4,6 +4,10 @@ import api, { type PageResponse } from "./api";
 export const saveTienIch = async (data: TienIchRequest): Promise<string> => {
     const formData = new FormData();
 
+    if(data.id != null){
+        formData.append("id", String(data.id));
+    }
+
     formData.append("tenTienIch", data.tenTienIch);
     formData.append("moTa", data.moTa);
     formData.append("matheloai", String(data.matheloai));
@@ -23,4 +27,8 @@ export const getAllTienIch = async (
     });
 
     return response.data;
+}
+
+export const xoaTienIch = async(id: number) => {
+    return await api.delete(`tienich/xoa/${id}`)
 }

@@ -6,7 +6,7 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import type { TransitionProps } from '@mui/material/transitions';
 import React, { useEffect, useState } from 'react';
 import { CheckIcon } from 'lucide-react';
-import type { TienIchRequest } from '../../../types/tienIch';
+import type { TienIch, TienIchRequest } from '../../../types/tienIch';
 import type { TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import { getAllTheLoai } from '../../../services/theLoaiTienIchService';
 import { saveTienIch } from '../../../services/tienIchService';
@@ -27,12 +27,15 @@ const Transition = React.forwardRef(function Transition(
 });
 
 
+
 function ModalThemTienIch({
     open,
-    handleClose
+    handleClose,
+    duLieuUpdate
 }: {
     open: boolean;
     handleClose: () => void;
+    duLieuUpdate: TienIch | null
 }) {
     const {
         register,
@@ -75,10 +78,28 @@ function ModalThemTienIch({
     useEffect(() => {
         if (open) {
             layDanhSachTheLoai();
-        } else {
-            reset();
         }
-    }, [open, reset]);
+    }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+
+        if (duLieuUpdate) {
+            reset({
+                tenTienIch: duLieuUpdate.tenTienIch ?? "",
+                moTa: duLieuUpdate.moTa ?? "",
+                matheloai: String(
+                    duLieuUpdate.theLoaiTienIch?.id ?? ""
+                )
+            });
+        } else {
+            reset({
+                tenTienIch: "",
+                moTa: "",
+                matheloai: ""
+            });
+        }
+    }, [open, duLieuUpdate, reset]);
 
     const handleCancel = () => {
         reset();
@@ -157,7 +178,7 @@ function ModalThemTienIch({
                         </Box>
                         <Box>
                             <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827' }}>
-                                Thông tin tiện ích cơ sở
+                                {duLieuUpdate ? "Cập nhật tiện ích" : "Thêm tiện ích"}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                                 Khai báo thông tin chi tiết tiện nghi phục vụ khách tại homestay
@@ -202,12 +223,12 @@ function ModalThemTienIch({
                                 <Select
                                     {...field}
                                     displayEmpty
-                                    value={field.value}
+                                    value={field.value ?? ""}
                                     onChange={(event) => {
                                         field.onChange(event.target.value);
                                     }}
                                     renderValue={(selected) => {
-                                        if (selected === "" || selected === undefined) {
+                                        if (selected === "") {
                                             return (
                                                 <Typography color="text.disabled">
                                                     Chọn thể loại tiện ích
@@ -219,7 +240,7 @@ function ModalThemTienIch({
                                             item => item.id === Number(selected)
                                         );
 
-                                        return theLoai?.tenTheLoai ?? "";
+                                        return theLoai?.tenTheLoai ?? "Không tìm thấy thể loại";
                                     }}
                                     sx={{
                                         borderRadius: 2,
@@ -357,7 +378,11 @@ function ModalThemTienIch({
                         '&:hover': { bgcolor: '#0f766e', boxShadow: 'none' }
                     }}
                 >
-                    {dangLuu ? "Đang lưu..." : "Lưu tiện ích mới"}
+                    {dangLuu
+                        ? "Đang lưu..."
+                        : duLieuUpdate
+                            ? "Cập nhật"
+                            : "Thêm mới"}
                 </Button>
             </DialogActions>
         </Dialog>

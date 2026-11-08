@@ -33,9 +33,14 @@ import {
     Spa as SpaIcon,
 } from '@mui/icons-material';
 import type { TienIch } from '../../../types/tienIch';
-import { getAllTienIch } from '../../../services/tienIchService';
+import { getAllTienIch, xoaTienIch } from '../../../services/tienIchService';
+import { toast } from '../../../utils/toast';
 
-function TableTienIch() {
+interface TableTienIchProps {
+    handleUpdate: (item: TienIch) => void;
+}
+
+function TableTienIch({ handleUpdate }: TableTienIchProps) {
     const [danhSachTienIch, setDsTienIch] = useState<TienIch[]>([]);
     const [tongSoLuong, setTongSoLuong] = useState<number>(0);
     const [tongSoTrang, setTongSoTrang] = useState<number>(0);
@@ -111,6 +116,18 @@ function TableTienIch() {
         setTuKhoaDebounce('');
         setTrang(0);
     };
+
+    const handleXoa = async(id: number) => {
+          try{
+                    await xoaTienIch(id)
+                    toast.success("Xóa thành công!");
+                    await taiDuLieu();
+                    
+                } catch{
+                    toast.error("Xóa thất bại");
+                    
+                }
+    }
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* 1. Thanh công cụ tìm kiếm và Bộ lọc */}
@@ -342,12 +359,12 @@ function TableTienIch() {
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Chỉnh sửa">
-                                                    <IconButton size="small" color="warning">
+                                                    <IconButton size="small" color="warning" onClick={() => handleUpdate(item)}>
                                                         <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Xóa">
-                                                    <IconButton size="small" color="error">
+                                                    <IconButton size="small" color="error" onClick={() => handleXoa(item.id)}>
                                                         <DeleteOutlineIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>

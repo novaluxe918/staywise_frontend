@@ -1,16 +1,24 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { CirclePlus } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import ModalThemTienIch from './ModalThemTienIch';
 import TableTienIch from './TableTienIch';
+import type { TienIch } from '../../../types/tienIch';
 
 function QuanLyTienIch() {
     
       const [open, setOpen] = React.useState(false);
+      const[duLieuUpdate, setDuLieuUpdate] = useState<TienIch | null>(null);
     
       const handleClickOpen = () => {
+        setDuLieuUpdate(null)
         setOpen(true);
       };
+
+      const handleUpdate = (item: TienIch) => {
+        setDuLieuUpdate(item);
+        setOpen(true);
+      }
     
       const handleClose = () => {
         setOpen(false);
@@ -49,10 +57,10 @@ function QuanLyTienIch() {
                 </Button>
             </Stack>
 
-            <TableTienIch />
+            <TableTienIch handleUpdate={handleUpdate} />
 
             {/* Dialog / Modal Thêm mới */}
-            <ModalThemTienIch open={open} handleClose={handleClose}  />
+            <ModalThemTienIch open={open} handleClose={handleClose} duLieuUpdate={duLieuUpdate}  />
         </div>
     );
 }
