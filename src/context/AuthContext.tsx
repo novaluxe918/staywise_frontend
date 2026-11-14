@@ -10,19 +10,21 @@ import api from "../services/api";
 export interface NguoiDung {
   id: number;
   email: string;
-  vaiTro: "USER" | "OWNER";
+  vaiTro: "USER" | "OWNER" | "ADMIN";
   hoTen?: string;
+  anhDaiDien?: string | null;
 }
 
 interface AuthContextType {
   nguoiDung: NguoiDung | null;
   dangNhap: (data: NguoiDung) => void;
   dangXuat: () => Promise<void>;
+  capNhatNguoiDung: (data: Partial<NguoiDung>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hàm đọc user_info từ Cookie khi app khởi động hoặc khi F5
+
 const layUserTuCookie = (): NguoiDung | null => {
   const rawData = Cookies.get("user_info");
   if (!rawData) return null;
@@ -34,11 +36,29 @@ const layUserTuCookie = (): NguoiDung | null => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Khởi tạo state ngay từ Cookie, không cần useEffect hay API /me
   const [nguoiDung, setNguoiDung] = useState<NguoiDung | null>(layUserTuCookie);
 
   const dangNhap = (data: NguoiDung) => {
     setNguoiDung(data);
+    Cookies.set("user_info", encodeURIComponent(JSON.stringify(data)), {
+      path: "/",
+      sameSite: "Lax",
+    });
+  };
+
+  const capNhatNguoiDung = (data: Partial<NguoiDung>) => {
+    setNguoiDung((prev) => {
+      const updatedUser = prev ? { ...prev, ...data } : null;
+
+      if (updatedUser) {
+        Cookies.set("user_info", encodeURIComponent(JSON.stringify(updatedUser)), {
+          path: "/",
+          sameSite: "Lax",
+        });
+      }
+
+      return updatedUser;
+    });
   };
 
   const dangXuat = async () => {
@@ -53,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ nguoiDung, dangNhap, dangXuat }}>
+    <AuthContext.Provider value={{ nguoiDung, dangNhap, dangXuat, capNhatNguoiDung }}>
       {children}
     </AuthContext.Provider>
   );

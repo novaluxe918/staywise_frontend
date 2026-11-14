@@ -4,146 +4,378 @@ import {
   Bell,
   ChevronDown,
   Building2,
+  UserRound,
+  Settings,
+  LogOut,
+  Home,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@mui/material";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { dangXuat as dangXuatAPI } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
+export default function HeaderOwner() {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const moDropDown = Boolean(anchorEl);
 
+  const {
+    nguoiDung,
+    dangXuat: xoaPhienDangNhap,
+  } = useAuth();
 
-export default function HeaderAdmin() {
-  const [moDropDown, setMoDropdown] = useState(false)
- const {
-  nguoiDung,
-  dangXuat: xoaPhienDangNhap
-} = useAuth();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-const handleLogout = async () => {
-  try {
-    await dangXuatAPI(); 
-  } catch (err) {
-    console.error("Lỗi đăng xuất", err);
-  } finally {
-    xoaPhienDangNhap(); 
-    navigate("/", { replace: true });
-  }
-};
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    handleCloseMenu();
+
+    try {
+      await dangXuatAPI();
+    } catch (err) {
+      console.error("Lỗi đăng xuất", err);
+    } finally {
+      xoaPhienDangNhap();
+      navigate("/", { replace: true });
+    }
+  };
+
+  const hoTen =
+    nguoiDung?.hoTen?.replace(/\+/g, " ") || "Chủ HomeStay";
+
+  const anhDaiDien = nguoiDung?.anhDaiDien || undefined;
 
   return (
-    <header className="fixed left-72 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white/95 px-6 backdrop-blur">
-      {/* Chọn cơ sở và tìm kiếm */}
-      <div className="flex min-w-0 flex-1 items-center gap-5">
-        <div className="flex shrink-0 items-center gap-3 rounded-xl bg-gray-50 px-3 py-2">
-          <Building2 size={22} className="text-emerald-700" />
+    <Box
+      component="header"
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: { xs: 0, md: "288px" },
+        right: 0,
+        height: "72px",
+        zIndex: 40,
+        bgcolor: "rgba(255,255,255,0.96)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #edf0f2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        px: { xs: 2, md: 3 },
+        gap: 2,
+      }}
+    >
+      {/* BÊN TRÁI */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2.5,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {/* Chọn cơ sở */}
+        <Box
+          sx={{
+            display: { xs: "none", sm: "flex" },
+            alignItems: "center",
+            gap: 1.5,
+            px: 2,
+            py: 1,
+            border: "1px solid #e5e7eb",
+            borderRadius: "12px",
+            bgcolor: "#fafcfb",
+            minWidth: 220,
+          }}
+        >
+          <Box
+            sx={{
+              width: 38,
+              height: 38,
+              borderRadius: "10px",
+              bgcolor: "#dcfce7",
+              color: "#15803d",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Building2 size={20} />
+          </Box>
 
-          <div>
-            <p className="text-[10px] font-bold text-gray-400">
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              sx={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#9ca3af",
+                letterSpacing: 0.7,
+              }}
+            >
               CƠ SỞ HIỆN TẠI
-            </p>
+            </Typography>
 
-            <select className="max-w-64 cursor-pointer bg-transparent text-sm font-semibold outline-none">
+            <select
+              className="w-full cursor-pointer truncate bg-transparent text-sm font-semibold text-gray-800 outline-none"
+            >
               <option value="HS1029">
-                Pine Hill Serenity Villa (#HS1029)
+                Pine Hill Serenity Villa
               </option>
               <option value="HS2041">
-                Cloud Peak Bungalow (#HS2041)
+                Cloud Peak Bungalow
               </option>
             </select>
-          </div>
-        </div>
+          </Box>
 
-        <div className="relative hidden min-w-0 flex-1 lg:block">
-          <Search
-            size={19}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <ChevronDown size={16} className="text-gray-400" />
+        </Box>
 
-          <input
-            type="text"
-            placeholder="Tra cứu mã đặt phòng, tên khách hàng..."
-            className="h-11 w-full rounded-xl bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:ring-2 focus:ring-emerald-200"
-          />
-        </div>
-      </div>
+        {/* Tìm kiếm */}
+        <TextField
+          placeholder="Tìm kiếm đặt phòng, khách hàng..."
+          size="small"
+          fullWidth
+          sx={{
+            maxWidth: 430,
+            display: { xs: "none", lg: "flex" },
+            "& .MuiOutlinedInput-root": {
+              height: 42,
+              borderRadius: "12px",
+              bgcolor: "#f8fafc",
+              fontSize: 13,
+              "& fieldset": {
+                borderColor: "#f1f5f9",
+              },
+              "&:hover fieldset": {
+                borderColor: "#bbf7d0",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#16a34a",
+              },
+            },
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={18} color="#9ca3af" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Box>
 
-      {/* Thông báo và tài khoản */}
-      <div className="ml-4 flex shrink-0 items-center gap-4">
-        <button
-          type="button"
-          aria-label="Thông báo"
-          className="relative rounded-xl bg-gray-50 p-2.5 hover:bg-gray-100"
+      {/* BÊN PHẢI */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        {/* Thông báo */}
+        <IconButton
+          sx={{
+            width: 42,
+            height: 42,
+            bgcolor: "#f8fafc",
+            borderRadius: "12px",
+            color: "#475569",
+            "&:hover": {
+              bgcolor: "#ecfdf5",
+              color: "#15803d",
+            },
+          }}
         >
-          <Bell size={21} />
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-            3
-          </span>
-        </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setMoDropdown(!moDropDown)}
-            type="button"
-            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2"
+          <Badge
+            badgeContent={3}
+            color="error"
+            sx={{
+              "& .MuiBadge-badge": {
+                fontSize: 9,
+                minWidth: 16,
+                height: 16,
+              },
+            }}
           >
-            <img
-              src="https://i.pravatar.cc/100?img=12"
-              alt="Ảnh đại diện"
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <Bell size={20} />
+          </Badge>
+        </IconButton>
 
-            <div className="hidden text-left sm:block">
-              <p className="text-sm font-semibold">
-            {nguoiDung?.hoTen?.replace(/\+/g, " ") ?? "Chủ HomeStay"}
-              </p>
-              <p className="text-xs text-gray-500">Chủ cơ sở</p>
-            </div>
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{ mx: 0.5, my: 1.5 }}
+        />
 
+        {/* Tài khoản */}
+        <Button
+          onClick={handleOpenMenu}
+          disableRipple
+          endIcon={
             <ChevronDown
-              size={18}
-              className={`transition-transform ${moDropDown ? "rotate-180" : ""
-                }`}
+              size={17}
+              style={{
+                transform: moDropDown ? "rotate(180deg)" : "none",
+                transition: "0.2s",
+              }}
             />
-          </button>
+          }
+          sx={{
+            display: "flex",
+            gap: 1.2,
+            px: 1.2,
+            py: 0.8,
+            borderRadius: "12px",
+            color: "#1f2937",
+            textTransform: "none",
+            "&:hover": {
+              bgcolor: "#f8fafc",
+            },
+          }}
+        >
+          <Avatar
+            src={anhDaiDien}
+            alt={hoTen}
+            sx={{
+              width: 38,
+              height: 38,
+              bgcolor: "#dcfce7",
+              color: "#15803d",
+              fontWeight: 700,
+              fontSize: 15,
+            }}
+          >
+            {hoTen.charAt(0).toUpperCase()}
+          </Avatar>
 
-          {moDropDown && (
-            <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setMoDropdown(false);
-                  navigate("/dang-ky-homestay");
-                }}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50"
-              >
-                Đăng ký HomeStay
-              </button>
+          <Box
+            sx={{
+              display: { xs: "none", sm: "block" },
+              textAlign: "left",
+              minWidth: 90,
+              maxWidth: 160,
+            }}
+          >
+            <Typography
+              noWrap
+              sx={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#1f2937",
+              }}
+            >
+              {hoTen}
+            </Typography>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMoDropdown(false);
-                  navigate("/cap-nhat-thong-tin");
-                }}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50"
-              >
-                Cập nhật thông tin
-              </button>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: "#94a3b8",
+                fontWeight: 500,
+              }}
+            >
+              Chủ HomeStay
+            </Typography>
+          </Box>
+        </Button>
 
-              <hr className="my-2" />
+        {/* Dropdown MUI */}
+        <Menu
+          anchorEl={anchorEl}
+          open={moDropDown}
+          onClose={handleCloseMenu}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1.5,
+                width: 250,
+                borderRadius: "14px",
+                border: "1px solid #f1f5f9",
+                boxShadow: "0 12px 35px rgba(0,0,0,0.08)",
+                overflow: "hidden",
+              },
+            },
+          }}
+        >
+          {/* Thông tin tài khoản */}
+          <Box sx={{ px: 2, py: 1.8 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+              {hoTen}
+            </Typography>
+            <Typography sx={{ color: "#94a3b8", fontSize: 12 }}>
+              Tài khoản chủ HomeStay
+            </Typography>
+          </Box>
 
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+          <Divider />
+
+          <MenuItem
+            onClick={() => {
+              handleCloseMenu();
+              navigate("/dang-ky-homestay");
+            }}
+            sx={{ py: 1.3, gap: 1.5, fontSize: 13 }}
+          >
+            <Home size={18} color="#64748b" />
+            Đăng ký HomeStay
+          </MenuItem>
+
+          <MenuItem
+            onClick={() => {
+              handleCloseMenu();
+              navigate("/cap-nhat-thong-tin");
+            }}
+            sx={{ py: 1.3, gap: 1.5, fontSize: 13 }}
+          >
+            <UserRound size={18} color="#64748b" />
+            Cập nhật thông tin
+          </MenuItem>
+
+          <Divider />
+
+          <MenuItem
+            onClick={handleLogout}
+            sx={{
+              py: 1.3,
+              gap: 1.5,
+              fontSize: 13,
+              color: "#dc2626",
+              "&:hover": {
+                bgcolor: "#fef2f2",
+              },
+            }}
+          >
+            <LogOut size={18} />
+            Đăng xuất
+          </MenuItem>
+        </Menu>
+      </Box>
+    </Box>
   );
 }

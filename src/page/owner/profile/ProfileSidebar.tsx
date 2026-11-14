@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Card,
     CardContent,
@@ -12,7 +12,8 @@ import {
     ListItemIcon,
     ListItemText,
     Badge,
-    IconButton
+    IconButton,
+    Button
 } from '@mui/material';
 import {
     CameraAlt as CameraAltIcon,
@@ -22,8 +23,13 @@ import {
     LockOutlined as LockOutlinedIcon,
     AccountBalanceOutlined as AccountBalanceIcon,
     NotificationsNoneOutlined as NotificationsIcon,
-    ChevronRight as ChevronRightIcon
+    ChevronRight as ChevronRightIcon,
+    Close as CloseIcon
 } from '@mui/icons-material';
+import { useUploadAnh } from '../../../hooks/useUploadAnh';
+import { useAuth } from '../../../context/AuthContext';
+import { toast } from '../../../utils/toast';
+import { capNhatAnhDaiDien, layThongTinNguoiDung } from '../../../services/nguoiDungService';
 
 interface ProfileSidebarProps {
     activeTab: string;
@@ -31,6 +37,8 @@ interface ProfileSidebarProps {
 }
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTabChange }) => {
+
+
     const menuItems = [
         { key: 'personal', label: 'Thông tin cá nhân & Liên hệ', icon: <PersonOutlineIcon fontSize="small" /> },
         { key: 'legal', label: 'Giấy tờ pháp lý & Kinh doanh', icon: <BadgeOutlinedIcon fontSize="small" /> },
@@ -39,16 +47,68 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
         { key: 'notifications', label: 'Cài đặt thông báo vận hành', icon: <NotificationsIcon fontSize="small" /> }
     ];
 
+    const { nguoiDung,  capNhatNguoiDung } = useAuth();
+    const {
+        fileAnh,
+        previewAnh,
+        handleChonAnh,
+        xoaAnh
+    } = useUploadAnh();
+
+    useEffect(() => {
+    const layThongTin = async () => {
+        try {
+            const data = await layThongTinNguoiDung();
+
+            capNhatNguoiDung({
+                anhDaiDien: data.anhDaiDien
+            });
+
+        } catch (error) {
+            console.error("Lỗi lấy thông tin người dùng:", error);
+        }
+    };
+
+    layThongTin();
+}, []);
+
+    const handleLuuAnh = async () => {
+    if (!fileAnh) {
+        toast.warning("Vui lòng chọn ảnh đại diện");
+        return;
+    }
+
+    try {
+        await capNhatAnhDaiDien(fileAnh);
+
+        const data = await layThongTinNguoiDung();
+
+        capNhatNguoiDung({
+            anhDaiDien: data.anhDaiDien
+        });
+
+        toast.success("Cập nhật ảnh đại diện thành công!");
+
+        xoaAnh();
+
+    } catch (error) {
+        console.error(error);
+        toast.error("Cập nhật ảnh đại diện thất bại!");
+    }
+};
+
     return (
         <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
             <CardContent sx={{ textAlign: 'center', pt: 4, pb: 2 }}>
                 {/* Avatar + Badge upload */}
                 <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+
                     <Avatar
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+                        src={nguoiDung?.anhDaiDien || ""}
                         sx={{ width: 96, height: 96, mx: 'auto', border: '3px solid #e0f2fe' }}
                     />
                     <IconButton
+                        component="label"
                         size="small"
                         sx={{
                             position: 'absolute',
@@ -59,40 +119,53 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
                             '&:hover': { bgcolor: 'primary.dark' }
                         }}
                     >
+
+
                         <CameraAltIcon fontSize="small" />
+                        <input hidden type="file" accept="image/*" onChange={handleChonAnh} />
                     </IconButton>
+                    {fileAnh && (
+                        <IconButton
+                            size="small"
+                            aria-label="Xóa ảnh đại diện"
+                            onClick={xoaAnh}
+                            sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    )}
+
                 </Box>
 
+                {fileAnh && (
+                    <Box sx={{ mb: 2 }}>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={handleLuuAnh}
+                            sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 600
+                            }}
+                        >
+                            Lưu ảnh đại diện
+                        </Button>
+                    </Box>
+                )}
+
+
+
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 0.5 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>Hoàng Minh Trí</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>{nguoiDung?.hoTen?.replace(/\+/g, " ").trim() || "Người dùng"}</Typography>
                     <VerifiedIcon color="primary" sx={{ fontSize: 18 }} />
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                     Chủ cơ sở vận hành homestay
                 </Typography>
 
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap', mb: 2.5 }}>
-                    <Chip label="Chủ HomeStay Chính Thức" size="small" color="primary" variant="outlined" sx={{ fontWeight: 600 }} />
-                    <Chip label="Đã xác thực 100%" size="small" color="success" sx={{ fontWeight: 600 }} />
-                </Box>
 
-                {/* Tóm tắt metadata */}
-                <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, textAlign: 'left', mb: 2, fontSize: '0.85rem' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.8 }}>
-                        <Typography variant="caption" color="text.secondary">Mã chủ nhà:</Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>#HS-HOST-1829</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.8 }}>
-                        <Typography variant="caption" color="text.secondary">Trạng thái:</Typography>
-                        <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
-                            ● Đang hoạt động
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="caption" color="text.secondary">Cơ sở trực thuộc:</Typography>
-                        <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>Pine Hill Serenity</Typography>
-                    </Box>
-                </Box>
+
             </CardContent>
 
             <Divider />

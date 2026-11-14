@@ -1,4 +1,4 @@
-export type VaiTro = "USER" | "OWNER";
+export type VaiTro = "USER" | "OWNER" | "ADMIN";
 
 export interface DangKyDTO{
     hoTen: string,
@@ -19,6 +19,7 @@ export interface DangNhapResponse{
     token: string;
     id: number;
     email: string;
-     vaiTro: "USER" | "OWNER";
+     vaiTro: "USER" | "OWNER" |  "ADMIN"; 
     hoTen: string;
+     anhDaiDien: string | null;
 }

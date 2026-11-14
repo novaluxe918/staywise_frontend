@@ -22,8 +22,7 @@ const menus = [
       { name: "Quản lý Phòng", path: "/quan-ly-phong", icon: BedDouble },
       { name: "Bảng giá & Mùa vụ", path: "/bang-gia", icon: CalendarDays },
       { name: "Quản lý Đặt phòng", path: "/quan-ly-dat-phong", icon: CalendarCheck },
-      { name: "Quản lý Dịch vụ", path: "/dich-vu", icon: HandPlatter },
-      { name: "Thể Loại Tiện Ích", path: "/tien-ich", icon: ConciergeBell },
+     
     ],
   },
   {
@@ -36,7 +35,7 @@ const menus = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function OwnerSidebar() {
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-slate-200/80 bg-white shadow-sm">
       {/* Brand Header */}
@@ -86,8 +85,8 @@ export default function AdminSidebar() {
                           <Icon
                             size={19}
                             className={`transition-colors duration-200 ${isActive
-                                ? "text-white"
-                                : "text-slate-400 group-hover:text-emerald-600"
+                              ? "text-white"
+                              : "text-slate-400 group-hover:text-emerald-600"
                               }`}
                           />
                           <span>{item.name}</span>
