@@ -17,28 +17,19 @@ import {
     Tooltip,
     Chip,
     Avatar,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    TextField,
+
     CircularProgress,
 } from "@mui/material";
 
 import {
     VisibilityOutlined,
-    CheckCircleOutlined,
-    CancelOutlined,
+    DeleteOutlineOutlined,
     HomeOutlined,
-    LocationOnOutlined,
-    Wifi,
-    MoreHoriz,
-    Close,
 } from "@mui/icons-material";
 import type { PageResponse } from "../../../services/api";
 import type { HomeStay } from "../../../types/homestay";
 import { getDanhSachHomeStay } from "../../../services/homestayService";
+import { CheckCircleIcon } from "lucide-react";
 
 
 const DanhSachTooltip = ({
@@ -104,7 +95,67 @@ const DanhSachTooltip = ({
         </Tooltip>
     );
 };
-function TableHomeStay() {
+
+
+const getTrangThaiHomeStayInfo = (trangThai?: string) => {
+    switch (trangThai) {
+        case "CHO_DUYET":
+            return {
+                label: "Chờ duyệt",
+                color: "#D97706",
+                bg: "#FEF3C7",
+            };
+
+        case "DA_DUYET":
+            return {
+                label: "Đã duyệt",
+                color: "#059669",
+                bg: "#D1FAE5",
+            };
+
+        case "TU_CHOI":
+            return {
+                label: "Từ chối",
+                color: "#DC2626",
+                bg: "#FEE2E2",
+            };
+
+        case "TAM_NGUNG":
+            return {
+                label: "Tạm ngưng",
+                color: "#D97706",
+                bg: "#FEF3C7",
+            };
+
+        case "DONG_CUA":
+            return {
+                label: "Đóng cửa",
+                color: "#64748B",
+                bg: "#E2E8F0",
+            };
+
+        case "DA_XOA":
+            return {
+                label: "Đã xóa",
+                color: "#DC2626",
+                bg: "#FEE2E2",
+            };
+
+        default:
+            return {
+                label: "Không xác định",
+                color: "#64748B",
+                bg: "#E2E8F0",
+            };
+    }
+};
+
+
+interface Props {
+      reloadTrigger: number;
+   handleXetDuyet: (item: HomeStay) => void;
+}
+function TableHomeStay({ handleXetDuyet, reloadTrigger}: Props) {
 
     const [dataPage, setDataPage] = useState<PageResponse<HomeStay> | null>(null);
     const [loading, setLoading] = useState(false);
@@ -113,30 +164,30 @@ function TableHomeStay() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
-useEffect(() => {
-    const fetchHomeStay = async () => {
-        try {
-            setLoading(true);
+    useEffect(() => {
+        const fetchHomeStay = async () => {
+            try {
+                setLoading(true);
 
-            const data = await getDanhSachHomeStay(
-                tuKhoa,
-                page,
-                rowsPerPage
-            );
+                const data = await getDanhSachHomeStay(
+                    tuKhoa,
+                    page,
+                    rowsPerPage
+                );
 
-           
-            setDataPage(data);
 
-        } catch (error) {
-            console.error("Lỗi lấy danh sách HomeStay:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+                setDataPage(data);
 
-    fetchHomeStay();
+            } catch (error) {
+                console.error("Lỗi lấy danh sách HomeStay:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-}, [tuKhoa, page, rowsPerPage]);
+        fetchHomeStay();
+
+    }, [tuKhoa, page, rowsPerPage, reloadTrigger]);
 
     const handleChangePage = (
         _event: unknown,
@@ -154,29 +205,6 @@ useEffect(() => {
 
     return (
         <Box sx={{ width: "100%" }}>
-
-            {/* Tiêu đề bảng */}
-            <Box sx={{ mb: 3 }}>
-                <Typography
-                    sx={{
-                        fontSize: 20,
-                        fontWeight: 800,
-                        color: "#172554",
-                        mb: 0.5,
-                    }}
-                >
-                    Danh sách HomeStay
-                </Typography>
-
-                <Typography
-                    sx={{
-                        fontSize: 13,
-                        color: "#94a3b8",
-                    }}
-                >
-                    Quản lý và xét duyệt thông tin các cơ sở lưu trú
-                </Typography>
-            </Box>
 
             {/* Bảng */}
             <TableContainer
@@ -204,7 +232,8 @@ useEffect(() => {
                                     borderBottom: "1px solid #e2e8f0",
                                 },
                             }}
-                        >
+                        >   
+                             <TableCell>STT</TableCell>
                             <TableCell>HOMESTAY</TableCell>
                             <TableCell>CHỦ HOMESTAY</TableCell>
                             <TableCell>MÔ TẢ</TableCell>
@@ -226,9 +255,14 @@ useEffect(() => {
                             </TableRow>
                         ) : dataPage?.content && dataPage.content.length > 0 ? (
 
-                            dataPage.content.map((item) => (
+                            dataPage.content.map((item, index) => (
                                 <TableRow key={item.id} hover>
-
+                                    
+                                     <TableCell>
+                                        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+                                              {index + 1}
+                                        </Typography>
+                                    </TableCell>
                                     {/* Tên HomeStay */}
                                     <TableCell>
                                         <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
@@ -289,12 +323,57 @@ useEffect(() => {
 
                                     {/* Trạng thái */}
                                     <TableCell>
-                                        {item.trangThaiHomeStay}
+                                        {(() => {
+                                            const trangThai = getTrangThaiHomeStayInfo(
+                                                item.trangThaiHomeStay
+                                            );
+
+                                            return (
+                                                <Chip
+                                                    label={trangThai.label}
+                                                    size="small"
+                                                    sx={{
+                                                        color: trangThai.color,
+                                                        backgroundColor: trangThai.bg,
+                                                        fontWeight: 600,
+                                                        borderRadius: "8px",
+                                                    }}
+                                                />
+                                            );
+                                        })()}
                                     </TableCell>
 
                                     {/* Thao tác */}
-                                    <TableCell align="center">
-                                        {/* Thêm icon xem, duyệt, từ chối sau */}
+                                    <TableCell align="right" sx={{ pr: 2.5, borderBottom: '1px solid #f1f5f9' }}>
+                                        <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
+
+
+                                            <IconButton
+                                                size="small"
+                                        
+                                                onClick={() => handleXetDuyet(item)}
+                                                sx={{
+                                                    color: '#64748b',
+                                                    borderRadius: '8px',
+                                                    '&:hover': { bgcolor: '#fef3c7', color: '#d97706' }
+                                                }}
+                                            >
+                                                <CheckCircleIcon fontSize="small" />
+                                            </IconButton>
+
+                                            <IconButton
+                                                size="small"
+                                                title="Xóa"
+                                                // onClick={() => handleXoa(item.id)}
+                                                sx={{
+                                                    color: '#64748b',
+                                                    borderRadius: '8px',
+                                                    '&:hover': { bgcolor: '#fee2e2', color: '#dc2626' }
+                                                }}
+                                            >
+                                                <DeleteOutlineOutlined fontSize="small" />
+                                            </IconButton>
+                                        </Stack>
                                     </TableCell>
 
                                 </TableRow>
@@ -342,7 +421,7 @@ useEffect(() => {
                 >
                     <TablePagination
                         component="div"
-                         count={dataPage?.page.totalElements ?? 0}
+                        count={dataPage?.page.totalElements ?? 0}
                         page={page}
                         onPageChange={handleChangePage}
                         rowsPerPage={rowsPerPage}

@@ -207,7 +207,7 @@ export default function DangKyThongTin() {
       try {
         setDangTaiTienIch(true);
 
-        const response = await getAllTienIch("", 0, 5);
+        const response = await getAllTienIch("", 0, 100);
 
         setDanhSachTienIch(response.content);
       } catch (error) {
@@ -225,7 +225,7 @@ export default function DangKyThongTin() {
       try {
 
         setDangTaiDichVu(true);
-        const response = await searchDichVu("", 0, 5);
+        const response = await searchDichVu("", 0, 100);
 
         setDanhSachDichVu(response.content);
       } catch (error) {

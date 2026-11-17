@@ -29,3 +29,15 @@ export const getDanhSachHomeStay = async (tuKhoa: string,
     );
     return response.data;
 };
+
+export const duyetHomeStay = async(id: number) => {
+    return await api.put(`/admin/duyet/${id}`);
+}
+
+export const tuChoiHomeStay = async(id: number,
+    lyDoTuChoi: string) => {
+          return await api.put(
+        `/admin/tuChoi/${id}`,
+        { lyDoTuChoi }
+    );
+    }

@@ -317,18 +317,6 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0, handleUpdate }:
                                         </TableCell>
                                         <TableCell align="right" sx={{ pr: 2.5, borderBottom: '1px solid #f1f5f9' }}>
                                             <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-                                                <IconButton
-                                                    size="small"
-                                                    title="Xem chi tiết"
-                                                    onClick={() => console.log("Xem chi tiết:", item.id)}
-                                                    sx={{
-                                                        color: '#64748b',
-                                                        borderRadius: '8px',
-                                                        '&:hover': { bgcolor: '#e0f2fe', color: '#0284c7' }
-                                                    }}
-                                                >
-                                                    <VisibilityOutlinedIcon fontSize="small" />
-                                                </IconButton>
 
                                                 <IconButton
                                                     size="small"

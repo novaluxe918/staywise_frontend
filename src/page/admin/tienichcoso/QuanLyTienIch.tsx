@@ -6,23 +6,30 @@ import TableTienIch from './TableTienIch';
 import type { TienIch } from '../../../types/tienIch';
 
 function QuanLyTienIch() {
+
+    const [open, setOpen] = React.useState(false);
+    const [duLieuUpdate, setDuLieuUpdate] = useState<TienIch | null>(null);
+    const [reloadTrigger, setReloadTrigger] = useState(0);
+   
+    const handleSuccess = () => {
+        setReloadTrigger(prev => prev + 1);
+    };
+
     
-      const [open, setOpen] = React.useState(false);
-      const[duLieuUpdate, setDuLieuUpdate] = useState<TienIch | null>(null);
-    
-      const handleClickOpen = () => {
+
+    const handleClickOpen = () => {
         setDuLieuUpdate(null)
         setOpen(true);
-      };
+    };
 
-      const handleUpdate = (item: TienIch) => {
+    const handleUpdate = (item: TienIch) => {
         setDuLieuUpdate(item);
         setOpen(true);
-      }
-    
-      const handleClose = () => {
+    }
+
+    const handleClose = () => {
         setOpen(false);
-      };
+    };
     return (
         <div className="p-6 bg-slate-50/50 min-h-screen">
             {/* Thanh tiêu đề và nút Thêm mới */}
@@ -57,10 +64,10 @@ function QuanLyTienIch() {
                 </Button>
             </Stack>
 
-            <TableTienIch handleUpdate={handleUpdate} />
+            <TableTienIch handleUpdate={handleUpdate}  />
 
             {/* Dialog / Modal Thêm mới */}
-            <ModalThemTienIch open={open} handleClose={handleClose} duLieuUpdate={duLieuUpdate}  />
+            <ModalThemTienIch onSuccess={handleSuccess} open={open} handleClose={handleClose} duLieuUpdate={duLieuUpdate} />
         </div>
     );
 }

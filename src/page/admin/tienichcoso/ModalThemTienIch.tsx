@@ -31,11 +31,13 @@ const Transition = React.forwardRef(function Transition(
 function ModalThemTienIch({
     open,
     handleClose,
-    duLieuUpdate
+    duLieuUpdate,
+     onSuccess
 }: {
     open: boolean;
     handleClose: () => void;
     duLieuUpdate: TienIch | null
+      onSuccess: () => void;
 }) {
     const {
         register,

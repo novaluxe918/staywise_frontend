@@ -5,6 +5,12 @@ export interface TheLoaiHomeStayResponse {
   label: string;
 }
 
+export interface HinhAnhHomeStay {
+    id: number;
+    duongDan: string;
+    laAnhDaiDien: boolean
+}
+
 export interface HomeStayRequest {
   tenHomeStay: string;
   moTa: string;
@@ -31,6 +37,7 @@ export interface HomeStay {
   trangThaiHomeStay: string;
   tienIchHienThi: string[];
   dichVuHienThi: string[];
+  danhSachHinhAnh: HinhAnhHomeStay[];
 }
 
 export interface AnhHomeStay {

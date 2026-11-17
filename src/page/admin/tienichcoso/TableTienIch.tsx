@@ -38,9 +38,10 @@ import { toast } from '../../../utils/toast';
 
 interface TableTienIchProps {
     handleUpdate: (item: TienIch) => void;
+   
 }
 
-function TableTienIch({ handleUpdate }: TableTienIchProps) {
+function TableTienIch({ handleUpdate}: TableTienIchProps) {
     const [danhSachTienIch, setDsTienIch] = useState<TienIch[]>([]);
     const [tongSoLuong, setTongSoLuong] = useState<number>(0);
     const [tongSoTrang, setTongSoTrang] = useState<number>(0);
@@ -61,6 +62,7 @@ function TableTienIch({ handleUpdate }: TableTienIchProps) {
 
         return () => clearTimeout(timer);
     }, [tuKhoa]);
+
 
     const taiDuLieu = useCallback(async () => {
         setDangTai(true);
@@ -117,16 +119,16 @@ function TableTienIch({ handleUpdate }: TableTienIchProps) {
         setTrang(0);
     };
 
-    const handleXoa = async(id: number) => {
-          try{
-                    await xoaTienIch(id)
-                    toast.success("Xóa thành công!");
-                    await taiDuLieu();
-                    
-                } catch{
-                    toast.error("Xóa thất bại");
-                    
-                }
+    const handleXoa = async (id: number) => {
+        try {
+            await xoaTienIch(id)
+            toast.success("Xóa thành công!");
+            await taiDuLieu();
+
+        } catch {
+            toast.error("Xóa thất bại");
+
+        }
     }
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -353,11 +355,7 @@ function TableTienIch({ handleUpdate }: TableTienIchProps) {
                                         {/* 7. Thao tác */}
                                         <TableCell align="center">
                                             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                                                <Tooltip title="Xem chi tiết">
-                                                    <IconButton size="small" color="primary">
-                                                        <VisibilityIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
+                                          
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton size="small" color="warning" onClick={() => handleUpdate(item)}>
                                                         <EditIcon fontSize="small" />
