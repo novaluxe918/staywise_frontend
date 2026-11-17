@@ -47,7 +47,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
         { key: 'notifications', label: 'Cài đặt thông báo vận hành', icon: <NotificationsIcon fontSize="small" /> }
     ];
 
-    const { nguoiDung,  capNhatNguoiDung } = useAuth();
+    const { nguoiDung, capNhatNguoiDung } = useAuth();
     const {
         fileAnh,
         previewAnh,
@@ -56,46 +56,46 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
     } = useUploadAnh();
 
     useEffect(() => {
-    const layThongTin = async () => {
+        const layThongTin = async () => {
+            try {
+                const data = await layThongTinNguoiDung();
+                
+                capNhatNguoiDung({
+                    anhDaiDien: data.anhDaiDien
+                });
+
+            } catch (error) {
+                console.error("Lỗi lấy thông tin người dùng:", error);
+            }
+        };
+
+        layThongTin();
+    }, []);
+
+    const handleLuuAnh = async () => {
+        if (!fileAnh) {
+            toast.warning("Vui lòng chọn ảnh đại diện");
+            return;
+        }
+
         try {
+            await capNhatAnhDaiDien(fileAnh);
+
             const data = await layThongTinNguoiDung();
 
             capNhatNguoiDung({
                 anhDaiDien: data.anhDaiDien
             });
 
+            toast.success("Cập nhật ảnh đại diện thành công!");
+
+            xoaAnh();
+
         } catch (error) {
-            console.error("Lỗi lấy thông tin người dùng:", error);
+            console.error(error);
+            toast.error("Cập nhật ảnh đại diện thất bại!");
         }
     };
-
-    layThongTin();
-}, []);
-
-    const handleLuuAnh = async () => {
-    if (!fileAnh) {
-        toast.warning("Vui lòng chọn ảnh đại diện");
-        return;
-    }
-
-    try {
-        await capNhatAnhDaiDien(fileAnh);
-
-        const data = await layThongTinNguoiDung();
-
-        capNhatNguoiDung({
-            anhDaiDien: data.anhDaiDien
-        });
-
-        toast.success("Cập nhật ảnh đại diện thành công!");
-
-        xoaAnh();
-
-    } catch (error) {
-        console.error(error);
-        toast.error("Cập nhật ảnh đại diện thất bại!");
-    }
-};
 
     return (
         <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
@@ -104,8 +104,17 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
                 <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
 
                     <Avatar
-                        src={nguoiDung?.anhDaiDien || ""}
-                        sx={{ width: 96, height: 96, mx: 'auto', border: '3px solid #e0f2fe' }}
+                        src={
+                            previewAnh ||
+                            nguoiDung?.anhDaiDien ||
+                            ""
+                        }
+                        sx={{
+                            width: 96,
+                            height: 96,
+                            mx: 'auto',
+                            border: '3px solid #e0f2fe'
+                        }}
                     />
                     <IconButton
                         component="label"
@@ -128,7 +137,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, onTab
                         <IconButton
                             size="small"
                             aria-label="Xóa ảnh đại diện"
-                            onClick={xoaAnh}
+                            onClick={() => xoaAnh()}
                             sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
                         >
                             <CloseIcon fontSize="small" />

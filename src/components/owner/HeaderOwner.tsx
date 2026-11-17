@@ -8,6 +8,8 @@ import {
   Settings,
   LogOut,
   Home,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 import {
@@ -20,18 +22,46 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { dangXuat as dangXuatAPI } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
+import { getThongTinHoSo, layThongTinNguoiDung } from "../../services/nguoiDungService";
+import { toast } from "../../utils/toast";
+import type { NguoiDungResponse } from "../../types/nguoiDung";
 
 export default function HeaderOwner() {
+  const [thongtinXacMinh, setThongTinXacMinh] = useState<NguoiDungResponse | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [anchorThongBao, setAnchorThongBao] =
+    useState<HTMLElement | null>(null);
+const openThongBao = Boolean(anchorThongBao);
   const moDropDown = Boolean(anchorEl);
+  const trangThai = thongtinXacMinh?.trangThaiXacMinh;
+  const coThongBao =
+    trangThai === "DA_XAC_MINH" || trangThai === "TU_CHOI";
+
+  useEffect(() => {
+    const fetchThongTinXacMinh = async () => {
+      try {
+        const data = await layThongTinNguoiDung();
+        setThongTinXacMinh(data);
+      } catch (error) {
+        console.error("Lỗi lấy thông tin xác minh:", error);
+      }
+    };
+
+    fetchThongTinXacMinh();
+
+    const interval = setInterval(fetchThongTinXacMinh, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const {
     nguoiDung,
@@ -58,6 +88,34 @@ export default function HeaderOwner() {
     } finally {
       xoaPhienDangNhap();
       navigate("/", { replace: true });
+    }
+  };
+
+  const handleDangKyHomeStay = async () => {
+    handleCloseMenu();
+
+    try {
+      const hoSo = await getThongTinHoSo();
+
+      if (hoSo.trangThaiXacMinh === "DA_XAC_MINH") {
+        navigate("/dang-ky-homestay");
+        return;
+      }
+
+      if (hoSo.trangThaiXacMinh === "CHUA_XAC_MINH") {
+        toast.warning("Bạn chưa có hồ sơ xác minh!");
+      } else if (hoSo.trangThaiXacMinh === "CHO_XAC_MINH") {
+        toast.info("Hồ sơ của bạn đang chờ quản trị viên xét duyệt!");
+      } else if (hoSo.trangThaiXacMinh === "TU_CHOI") {
+        toast.error(
+          hoSo.lyDoTuChoiXacMinh
+            ? `Hồ sơ bị từ chối: ${hoSo.lyDoTuChoiXacMinh}`
+            : "Hồ sơ của bạn đã bị từ chối!"
+        );
+      }
+
+    } catch (error) {
+      toast.error("Không thể kiểm tra hồ sơ. Vui lòng thử lại!");
     }
   };
 
@@ -192,6 +250,7 @@ export default function HeaderOwner() {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         {/* Thông báo */}
         <IconButton
+          onClick={(event) => setAnchorThongBao(event.currentTarget)}
           sx={{
             width: 42,
             height: 42,
@@ -205,8 +264,9 @@ export default function HeaderOwner() {
           }}
         >
           <Badge
-            badgeContent={3}
+            badgeContent={coThongBao ? 1 : 0}
             color="error"
+            invisible={!coThongBao}
             sx={{
               "& .MuiBadge-badge": {
                 fontSize: 9,
@@ -219,6 +279,96 @@ export default function HeaderOwner() {
           </Badge>
         </IconButton>
 
+        <Menu
+          anchorEl={anchorEl}
+          open={openThongBao}
+          onClose={() => setAnchorThongBao(null)}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          slotProps={{
+            paper: {
+              sx: {
+                width: 340,
+                maxWidth: "calc(100vw - 32px)",
+                mt: 1,
+                borderRadius: 3,
+                boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
+              },
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 15 }}>
+              Thông báo
+            </Typography>
+          </Box>
+
+          <Divider />
+
+          {trangThai === "DA_XAC_MINH" && (
+            <MenuItem
+              sx={{
+                whiteSpace: "normal",
+                py: 2,
+                alignItems: "flex-start",
+              }}
+            >
+              <Stack direction="row" spacing={1.5}>
+                <CheckCircle color="#16a34a" size={22} />
+
+                <Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+                    Xác minh thành công
+                  </Typography>
+
+                  <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                    Hồ sơ của bạn đã được Admin xét duyệt thành công.
+                    Bạn có thể tiếp tục sử dụng các chức năng dành cho chủ HomeStay.
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+          )}
+
+          {trangThai === "TU_CHOI" && (
+            <MenuItem
+              sx={{
+                whiteSpace: "normal",
+                py: 2,
+                alignItems: "flex-start",
+              }}
+            >
+              <Stack direction="row" spacing={1.5}>
+                <AlertCircle color="#dc2626" size={22} />
+
+                <Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+                    Hồ sơ chưa được duyệt
+                  </Typography>
+
+                  <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                    {thongtinXacMinh?.lyDoTuChoiXacMinh ||
+                      "Vui lòng kiểm tra lại hồ sơ của bạn."}
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+          )}
+
+          {trangThai === "CHUA_XAC_MINH" && (
+            <MenuItem>
+              <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+                Hồ sơ của bạn đang chờ Admin xét duyệt.
+              </Typography>
+            </MenuItem>
+          )}
+        </Menu>
         <Divider
           orientation="vertical"
           flexItem
@@ -338,7 +488,7 @@ export default function HeaderOwner() {
           <MenuItem
             onClick={() => {
               handleCloseMenu();
-              navigate("/dang-ky-homestay");
+              handleDangKyHomeStay();
             }}
             sx={{ py: 1.3, gap: 1.5, fontSize: 13 }}
           >

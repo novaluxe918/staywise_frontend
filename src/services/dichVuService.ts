@@ -1,6 +1,6 @@
 
-import type { DichVuRequest } from "../types/dichVu";
-import api from "./api";
+import type { DichVu, DichVuRequest } from "../types/dichVu";
+import api, { type PageResponse } from "./api";
 
 export const saveDichVu = async (data: DichVuRequest): Promise<string> => {
    const formData = new FormData();
@@ -15,11 +15,12 @@ export const saveDichVu = async (data: DichVuRequest): Promise<string> => {
 
    return response.data;
 }
-
-export const searchDichVu = async (tuKhoa: string,
-   trang: number,
-   kichThuoc: number) => {
-   const response = await api.get("/dichVu/timKiem", {
+export const searchDichVu = async (
+   tuKhoa: string = "",
+   trang: number = 0,
+   kichThuoc: number = 5
+): Promise<PageResponse<DichVu>> => {
+   const response = await api.get<PageResponse<DichVu>>("/dichVu/timKiem", {
       params: {
          tuKhoa,
          trang,
@@ -28,4 +29,4 @@ export const searchDichVu = async (tuKhoa: string,
    });
 
    return response.data;
-}
+};

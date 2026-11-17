@@ -66,7 +66,6 @@ function ModalThamDinh({
 
     if (!owner) return null;
 
-    // 5. Xác nhận cập nhật
     const handleXacNhan = () => {
 
         if (!trangThai) return;

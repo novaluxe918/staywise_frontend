@@ -14,12 +14,13 @@ import type { NguoiDungRequest, NguoiDungResponse } from '../../../types/nguoiDu
 import { capNhatThongTinNguoiDung, layThongTinNguoiDung } from '../../../services/nguoiDungService';
 import { useUploadAnh } from '../../../hooks/useUploadAnh';
 import { toast } from '../../../utils/toast';
+import { useNavigate } from 'react-router-dom';
 
 
 export const ProfilePage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('legal');
     const [nguoiDung, setNguoiDung] = useState<NguoiDungResponse | null>(null);
-
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         hoTen: "",
         soDienThoai: "",
@@ -102,7 +103,7 @@ const handleSave = async () => {
                     </Box>
 
                     <Stack direction="row" spacing={1.5}>
-                        <Button variant="outlined" color="inherit" startIcon={<ArrowLeft />}>
+                        <Button variant="outlined" color="inherit" startIcon={<ArrowLeft />} onClick={() => navigate(-1)}>
                             Quay lại
                         </Button>
                     </Stack>
@@ -122,6 +123,7 @@ const handleSave = async () => {
                             anhGiayPhepKinhDoanh={
                                 nguoiDung?.anhGiayPhepKinhDoanh || null
                             }
+                            trangThaiXacMinh={nguoiDung?.trangThaiXacMinh ?? "CHUA_XAC_MINH"}
 
                             previewAnhDaiDien={avatar.previewAnh}
                             previewCCCDMatTruoc={cccdMatTruoc.previewAnh}

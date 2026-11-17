@@ -18,6 +18,7 @@ import AdminDasboard from "../page/admin/dasboard/AdminDasboard";
 import LayoutOwner from "../page/owner/layout/LayoutOwner";
 import LayoutAdmin from "../page/admin/layout/LayoutAdmin";
 import QuanLyOwner from "../page/admin/homestayowner/QuanLyOwner";
+import QuanLyHomeStay from "../page/admin/homestay/QuanLyHomeStay";
 
 
 
@@ -45,6 +46,8 @@ function AppRoutes() {
         <Route path="tien-ichcs" element={<QuanLyTienIch />} />
 
         <Route path="dich-vu" element={<QuanLyDichVu />} />
+
+        <Route path="homestays" element={<QuanLyHomeStay />} />
       </Route>
 
       {/* Giao diện quản lý OWNER */}

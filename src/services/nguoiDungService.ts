@@ -77,3 +77,9 @@ export const capNhatTrangThaiXacMinh = async (
 
     return response.data;
 };
+
+
+export const getThongTinHoSo = async () => {
+    const response = await api.get("/nguoidung/thong-bao");
+    return response.data;
+};

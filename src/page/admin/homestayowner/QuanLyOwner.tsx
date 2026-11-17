@@ -3,9 +3,10 @@ import { Box, Stack, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import TableOwner from './TableOwner';
 import type { CapNhatTrangThaiXacMinhRequest, OwnerRow } from '../../../types/nguoiDung';
-import { getDanhSachOwners } from '../../../services/nguoiDungService';
+import { capNhatTrangThaiXacMinh, getDanhSachOwners } from '../../../services/nguoiDungService';
 import ModalXemGiayTo from './ModalXemGiayTo';
 import ModalThamDinh from './ModalThamDinh';
+import { toast } from '../../../utils/toast';
 
 function QuanLyOwner() {
     const [owner, setOwner] = useState<OwnerRow[]>([]);
@@ -45,7 +46,28 @@ function QuanLyOwner() {
         setOwnerThamDinh(row);
         setOpenThamDinh(true);
     };
+    
+    const handleSubmitThamDinh = async (
+    id: number,
+    data: CapNhatTrangThaiXacMinhRequest
+) => {
+    try {
+        await capNhatTrangThaiXacMinh(id, data);
 
+        toast.success("Cập nhật trạng thái xác minh thành công!");
+
+
+        setOpenThamDinh(false);
+        setOwnerThamDinh(null);
+
+    
+        await fetchOwners();
+
+    } catch (error) {
+        console.error("Lỗi cập nhật trạng thái:", error);
+        toast.error("Cập nhật trạng thái xác minh thất bại!");
+    }
+};
     useEffect(() => {
         fetchOwners();
     }, []);
@@ -87,13 +109,8 @@ function QuanLyOwner() {
             <ModalThamDinh open={openThamDinh}
                 onClose={() => setOpenThamDinh(false)}
                 owner={ownerThamDinh}
-                onSubmit={(
-                    id: number,
-                    data: CapNhatTrangThaiXacMinhRequest
-                ) => {
-                    console.log("ID OWNER:", id);
-                    console.log("Dữ liệu cập nhật:", data);
-                }} />
+                onSubmit={handleSubmitThamDinh}
+             />
 
         </div>
     );

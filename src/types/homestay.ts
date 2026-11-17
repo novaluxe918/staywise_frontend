@@ -1,5 +1,12 @@
-export interface HomeStayRequest{
-     tenHomeStay: string;
+
+
+export interface TheLoaiHomeStayResponse {
+  value: string;
+  label: string;
+}
+
+export interface HomeStayRequest {
+  tenHomeStay: string;
   moTa: string;
   phuongXa: string;
   tinhThanh: string;
@@ -11,9 +18,24 @@ export interface HomeStayRequest{
 }
 
 
+export interface HomeStay {
+  id: number;
+  tenHomeStay: string;
+  tenChuHomeStay: string;
+  moTa: string;
+  phuongXa: string;
+  tinhThanh: string;
+  diaChi: string;
+  soDienThoai: string;
+  email: string;
+  trangThaiHomeStay: string;
+  tienIchHienThi: string[];
+  dichVuHienThi: string[];
+}
 
-export interface AnhHomeStay{
-      id: string;
+export interface AnhHomeStay {
+  id: string;
   file: File;
   url: string;
 }
+

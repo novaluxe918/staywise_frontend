@@ -1,30 +1,134 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import {
-  ShieldCheck,
+  Box,
+  Button,
+  Chip,
+  Container,
+  Divider,
+  IconButton,
+  MenuItem,
+  Paper,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import Grid from "@mui/material/Grid";
+import {
   House,
   ImagePlus,
   Upload,
   Trash2,
   Star,
-  FileText,
   MapPin,
-  CheckCircle2,
-  FileCheck2,
+  Sparkles,
+  ConciergeBell,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
-import { dangKyHomeStay } from "../../../services/homestayService";
+import { dangKyHomeStay, getAllTheLoaiHomeStay } from "../../../services/homestayService";
 import type { PhuongXa, TinhThanh } from "../../../types/diaChi";
-import { layDanhSachPhuongXa, layDanhSachTinhThanh } from "../../../services/diaChiService";
-import type { HomeStayRequest } from "../../../types/homestay";
+import {
+  layDanhSachPhuongXa,
+  layDanhSachTinhThanh,
+} from "../../../services/diaChiService";
+import type { HomeStayRequest, TheLoaiHomeStayResponse } from "../../../types/homestay";
+import type { DichVu } from "../../../types/dichVu";
+import { searchDichVu } from "../../../services/dichVuService";
+import type { TienIch } from "../../../types/tienIch";
+import { getAllTienIch } from "../../../services/tienIchService";
+import { useUploadAnh } from "../../../hooks/useUploadAnh";
+import { toast } from "../../../utils/toast";
 
-interface AnhHomeStay {
-  id: string;
-  file: File;
-  url: string;
+
+const emeraldFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px",
+    backgroundColor: "#fff",
+    fontSize: 14,
+    "& fieldset": { borderColor: "#e2e8f0" },
+    "&:hover fieldset": { borderColor: "#94a3b8" },
+    "&.Mui-focused fieldset": { borderColor: "#07845f", borderWidth: 1.5 },
+  },
+  "& .MuiInputLabel-root": { fontSize: 13 },
+  "& .MuiInputLabel-root.Mui-focused": { color: "#07845f" },
+};
+
+const sectionSx = {
+  border: "1px solid #e7ece9",
+  borderRadius: "16px",
+  overflow: "hidden",
+  boxShadow: "0 5px 20px rgba(15, 23, 42, 0.035)",
+  backgroundColor: "#fff",
+};
+
+function SectionHeading({
+  number,
+  icon,
+  title,
+  description,
+  trailing,
+}: {
+  number: string;
+  icon: ReactNode;
+  title: string;
+  description: string;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+        px: { xs: 2, md: 2.5 },
+        py: 1.8,
+        borderBottom: "1px solid #edf1ee",
+        background: "linear-gradient(110deg, #fbfdfc 0%, #f5faf7 100%)",
+      }}
+    >
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{ alignItems: "center", minWidth: 0 }}
+      >
+        <Box
+          sx={{
+            width: 42,
+            height: 42,
+            flexShrink: 0,
+            display: "grid",
+            placeItems: "center",
+            borderRadius: "12px",
+            bgcolor: "#e5f5ed",
+            color: "#087653",
+          }}
+        >
+          {icon}
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 750, color: "#172b24" }}>
+            <Box component="span" sx={{ color: "#07845f", mr: 0.7 }}>
+              {number}.
+            </Box>
+            {title}
+          </Typography>
+          <Typography sx={{ mt: 0.25, fontSize: 12, color: "#718078" }}>
+            {description}
+          </Typography>
+        </Box>
+      </Stack>
+      {trailing}
+    </Box>
+  );
 }
 
 export default function DangKyThongTin() {
-
   const [form, setForm] = useState<HomeStayRequest>({
     tenHomeStay: "",
     moTa: "",
@@ -36,17 +140,35 @@ export default function DangKyThongTin() {
     diaChi: "",
   });
 
+  const {
+    anhList,
+    anhBia,
+    handleChonAnh,
+    xoaAnh,
+    xoaTatCaAnh,
+    chonAnhBia,
+  } = useUploadAnh({
+    nhieuAnh: true,
+    maxFiles: 20,
+    maxSize: 10 * 1024 * 1024,
+    dinhDang: ["image/jpeg", "image/png", "image/webp"],
+  });
+
   const inputFileRef = useRef<HTMLInputElement>(null);
-  const [dangLuu, setDangLuu] = useState<boolean>(false);
-  const [anhList, setAnhList] = useState<AnhHomeStay[]>([]);
-  const [anhBia, setAnhBia] = useState<string | null>(null);
-  const [danhSachTinhThanh, setDanhSachTinhThanh] =
-    useState<TinhThanh[]>([]);
+  const [dangLuu, setDangLuu] = useState(false);
+  const [danhSachTinhThanh, setDanhSachTinhThanh] = useState<TinhThanh[]>([]);
+  const [danhSachPhuongXa, setDanhSachPhuongXa] = useState<PhuongXa[]>([]);
 
-  const [danhSachPhuongXa, setDanhSachPhuongXa] =
-    useState<PhuongXa[]>([]);
+  const [danhSachTienIch, setDanhSachTienIch] = useState<TienIch[]>([]);
+  const [tienIchDaChon, setTienIchDaChon] = useState<number[]>([]);
+  const [dangTaiTienIch, setDangTaiTienIch] = useState(false);
 
+  const [danhSachDichVu, setDanhSachDichVu] = useState<DichVu[]>([])
+  const [dichVuDaChon, setDichVuDaChon] = useState<number[]>([]);
+  const [dangTaiDichVu, setDangTaiDichVu] = useState(false);
 
+  const [danhSachTheLoai, setDanhSachTheLoai] = useState<TheLoaiHomeStayResponse[]>([]);
+  const [dangTaiTheLoai, setDangTaiTheLoai] = useState(false);
 
   useEffect(() => {
     const taiTinhThanh = async () => {
@@ -56,123 +178,118 @@ export default function DangKyThongTin() {
       } catch (error) {
         console.error("Lỗi lấy danh sách tỉnh/thành:", error);
       }
-
     };
     taiTinhThanh();
-  }, [])
+  }, []);
 
   useEffect(() => {
     const taiPhuongXa = async () => {
       const tinhDuocChon = danhSachTinhThanh.find(
         (tinh) => tinh.name === form.tinhThanh
       );
-
       if (!tinhDuocChon) {
         setDanhSachPhuongXa([]);
         return;
       }
-
       try {
-        const data = await layDanhSachPhuongXa(
-          Number(tinhDuocChon.code)
-        );
+        const data = await layDanhSachPhuongXa(Number(tinhDuocChon.code));
         setDanhSachPhuongXa(data);
       } catch (error) {
         console.error("Lỗi lấy danh sách phường/xã:", error);
         setDanhSachPhuongXa([]);
       }
     };
-
     taiPhuongXa();
   }, [form.tinhThanh, danhSachTinhThanh]);
 
+  useEffect(() => {
+    const taiDanhSachTienIch = async () => {
+      try {
+        setDangTaiTienIch(true);
 
+        const response = await getAllTienIch("", 0, 5);
+
+        setDanhSachTienIch(response.content);
+      } catch (error) {
+        console.error("Lỗi lấy danh sách tiện ích:", error);
+      } finally {
+        setDangTaiTienIch(false);
+      }
+    };
+
+    taiDanhSachTienIch();
+  }, []);
+
+  useEffect(() => {
+    const taiDanhSachDichVu = async () => {
+      try {
+
+        setDangTaiDichVu(true);
+        const response = await searchDichVu("", 0, 5);
+
+        setDanhSachDichVu(response.content);
+      } catch (error) {
+        console.error("Lỗi lấy danh sách dịch vụ:", error);
+      } finally {
+        setDangTaiDichVu(false)
+      }
+    };
+    taiDanhSachDichVu();
+  }, []);
+
+  useEffect(() => {
+    const layDanhSachTheLoai = async () => {
+      try {
+        setDangTaiTheLoai(true);
+
+        const data = await getAllTheLoaiHomeStay();
+
+        setDanhSachTheLoai(data);
+      } catch (error) {
+        console.error("Lỗi lấy danh sách thể loại HomeStay:", error);
+        toast.error("Không thể tải danh sách thể loại HomeStay!");
+      } finally {
+        setDangTaiTheLoai(false);
+      }
+    };
+
+    layDanhSachTheLoai();
+  }, []);
   const xuLyThayDoi = (
-    e: ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-  const xuLyChonAnh = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-
-    if (files.length === 0) return;
-
-    const dinhDangHopLe = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    const anhHopLe = files.filter(
-      (file) =>
-        dinhDangHopLe.includes(file.type)
-    );
-
-    const anhSaiDinhDang = files.filter(
-      (file) => !dinhDangHopLe.includes(file.type)
-    );
-
-    const anhVuotDungLuong = files.filter(
-      (file) => !dinhDangHopLe.includes(file.type)
-    );
-
-    const anhMoi = anhHopLe.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      url: URL.createObjectURL(file),
-    }));
-
-    setAnhList((prev) => {
-      if (!anhBia && anhMoi.length > 0) {
-        setAnhBia(anhMoi[0].id);
-      }
-
-      return [...prev, ...anhMoi];
-    });
-
-    if (anhSaiDinhDang.length > 0) {
-      alert("Một số file không đúng định dạng JPG, PNG hoặc WEBP.");
-    }
-
-
-    e.target.value = "";
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const xoaAnh = (id: string) => {
-    const anhCanXoa = anhList.find((anh) => anh.id === id);
+  const toggleTienIch = (id: number) => {
+    setTienIchDaChon((prev) =>
+      prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id]
+    );
+  };
 
-    if (anhCanXoa) {
-      URL.revokeObjectURL(anhCanXoa.url);
-    }
-
-    const danhSachMoi = anhList.filter((anh) => anh.id !== id);
-
-    setAnhList(danhSachMoi);
-
-    if (anhBia === id) {
-      setAnhBia(danhSachMoi[0]?.id ?? null);
-    }
+  const toggleDichVu = (id: number) => {
+    setDichVuDaChon((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id])
   };
 
 
 
-  const xuLyGuiForm = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+
+
+  const xuLyGuiForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (dangLuu) return;
 
-    // Yêu cầu tối thiểu 5 ảnh
     if (anhList.length < 5) {
-      alert("Vui lòng tải lên ít nhất 5 ảnh HomeStay.");
+      toast.warning("Vui lòng tải lên ít nhất 5 ảnh HomeStay!");
+      return;
+    }
+
+    if (!anhBia) {
+      toast.warning("Vui lòng chọn ảnh bìa HomeStay!");
       return;
     }
 
@@ -180,13 +297,46 @@ export default function DangKyThongTin() {
 
     try {
       const data = new FormData();
+
+      // Thông tin HomeStay
       Object.entries(form).forEach(([key, value]) => {
-        data.append(key, value);
+        data.append(key, String(value ?? ""));
       });
+
+      // Danh sách ảnh
+      anhList.forEach((anh) => {
+        data.append("files", anh.file);
+      });
+
+      // Vị trí ảnh bìa
+      const viTriAnhBia = anhList.findIndex(
+        (anh) => anh.id === anhBia
+      );
+
+      data.append("anhBiaIndex", String(viTriAnhBia));
+
+      // Danh sách tiện ích
+      tienIchDaChon.forEach((id) => {
+        data.append("danhSachTienIchHS", String(id));
+      });
+
+      // Danh sách dịch vụ
+      dichVuDaChon.forEach((id) => {
+        data.append("danhSachDichVuHS", String(id));
+      });
+
+      // KIỂM TRA DỮ LIỆU TRƯỚC KHI GỬI
+      console.log("========== DỮ LIỆU ĐĂNG KÝ ==========");
+      data.forEach((value, key) => {
+        console.log(key, value);
+      });
+      console.log("====================================");
 
       const response = await dangKyHomeStay(data);
 
-      alert(response.data);
+      console.log("KẾT QUẢ BACKEND:", response.data);
+
+      toast.success("Đăng ký HomeStay thành công!");
 
       setForm({
         tenHomeStay: "",
@@ -199,17 +349,17 @@ export default function DangKyThongTin() {
         theLoaiHomeStay: "",
       });
 
-      anhList.forEach((anh) => {
-        URL.revokeObjectURL(anh.url);
-      });
-
-      setAnhList([]);
-      setAnhBia(null);
+      xoaTatCaAnh();
+      setTienIchDaChon([]);
+      setDichVuDaChon([]);
 
     } catch (error: any) {
-      console.error("Lỗi đăng ký HomeStay:", error);
-      console.log("Backend response:", error.response?.data);
-      console.log("HTTP status:", error.response?.status);
+      console.error("LỖI ĐĂNG KÝ HOMESTAY:", error);
+
+      console.log("Error message:", error.message);
+      console.log("Error code:", error.code);
+      console.log("Error response:", error.response);
+      console.log("Error request:", error.request);
 
       const message =
         typeof error.response?.data === "string"
@@ -217,501 +367,475 @@ export default function DangKyThongTin() {
           : error.response?.data?.message ??
           "Không thể kết nối đến máy chủ. Vui lòng thử lại.";
 
-      alert(message);
+      toast.error(message);
 
     } finally {
       setDangLuu(false);
     }
   };
 
-  const inputClass =
-    "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10";
 
-  const labelClass = "mb-2 block text-sm font-semibold text-gray-700";
+
+  const soBuocHoanThanh = (form.tenHomeStay.trim() && form.moTa.trim() && form.email.trim() ? 1 : 0)
+    + (anhList.length >= 5 ? 1 : 0)
+    + (tienIchDaChon.length > 0 || dichVuDaChon.length > 0 ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800">
-      {/* HEADER */}
-      <header className="border-b border-gray-200 bg-white px-5 py-8 lg:px-12">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 md:flex-row md:items-center">
-          <div>
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-800">
-                Hồ sơ đăng ký lưu trú
-              </span>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f5f8f6", pb: 12 }}>
+      {/* Header gọn, có phân cấp rõ ràng */}
+      <Box sx={{ bgcolor: "#fff", borderBottom: "1px solid #e7ece9" }}>
+        <Container maxWidth="xl" sx={{ py: 2 }}>
+          <Stack
+            sx={{
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-start", sm: "center" },
+              justifyContent: "space-between",
+              gap: 2,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "13px",
+                  bgcolor: "#087653",
+                  color: "#fff",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <House size={22} />
+              </Box>
+              <Box>
+                <Typography
+                  component="h1"
+                  sx={{ fontSize: { xs: 19, md: 22 }, fontWeight: 800, color: "#18352a", letterSpacing: "-0.5px" }}
+                >
+                  Đăng ký HomeStay
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: "#718078", mt: 0.2 }}>
+                  Cung cấp thông tin để bắt đầu kinh doanh trên StayWise
+                </Typography>
+              </Box>
+            </Stack>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <ShieldCheck size={17} color="#07845f" />
+              <Typography sx={{ fontSize: 12, color: "#64756c" }}>
+                Thông tin của bạn được bảo mật
+              </Typography>
+            </Stack>
+          </Stack>
 
-              <span className="flex items-center gap-2 text-xs text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Đang đăng ký trực tuyến
-              </span>
-            </div>
+          <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}>
+            {[
+              { label: "Thông tin", done: !!(form.tenHomeStay.trim() && form.moTa.trim() && form.email.trim()) },
+              { label: "Hình ảnh", done: anhList.length >= 5 },
+              { label: "Tiện ích", done: tienIchDaChon.length > 0 || dichVuDaChon.length > 0 },
+            ].map((step, index) => (
+              <Box key={step.label} sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, gap: 0.8 }}>
+                <Box
+                  sx={{
+                    width: 23,
+                    height: 23,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                    bgcolor: step.done ? "#087653" : "#edf2ef",
+                    color: step.done ? "#fff" : "#84928a",
+                    fontSize: 11,
+                    fontWeight: 750,
+                  }}
+                >
+                  {step.done ? <Check size={13} /> : index + 1}
+                </Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 650, color: step.done ? "#087653" : "#7b8981", whiteSpace: "nowrap" }}>
+                  {step.label}
+                </Typography>
+                {index < 2 && <Box sx={{ height: 1, flex: 1, bgcolor: "#e2e9e4", minWidth: 12 }} />}
+              </Box>
+            ))}
+            <Typography sx={{ fontSize: 11, color: "#7b8981", whiteSpace: "nowrap", ml: 0.5 }}>
+              {soBuocHoanThanh}/3
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
 
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Đăng ký cơ sở HomeStay đối tác
-            </h1>
-
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-              Hoàn tất thông tin cơ sở lưu trú và hình ảnh để tham gia
-              mạng lưới đối tác StayWise.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-4">
-            <ShieldCheck size={30} className="shrink-0 text-emerald-700" />
-
-            <div>
-              <p className="text-xs text-gray-500">Bảo mật thông tin</p>
-              <p className="mt-1 text-sm font-semibold text-gray-800">
-                Thông tin được bảo vệ an toàn
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN */}
-      <main className="mx-auto max-w-7xl px-5 py-8 lg:px-12">
+      <Container maxWidth="xl" sx={{ pt: 2.5, px: { xs: 1.5, sm: 2.5 } }}>
         <form onSubmit={xuLyGuiForm}>
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-            {/* CỘT TRÁI */}
-            <div className="flex flex-col gap-8 lg:col-span-8">
-              {/* THÔNG TIN HOMESTAY */}
-              <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-start gap-4 border-b border-gray-100 bg-gray-50 p-6">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
-                    <House size={23} />
-                  </div>
-
-                  <div>
-                    <h2 className="text-lg font-bold">
-                      1. Thông tin cơ sở HomeStay
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Thông tin nhận diện và địa chỉ cơ sở lưu trú.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 md:p-8">
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>
-                      Tên cơ sở HomeStay <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                      required
-                      name="tenHomeStay"
-                      value={form.tenHomeStay}
-                      onChange={xuLyThayDoi}
-                      className={inputClass}
-                      placeholder=" Pine Hill Serenity Villa Đà Lạt"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>
-                      Mô tả giới thiệu HomeStay{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-
-                    <textarea
-                      required
-                      rows={4}
-                      name="moTa"
-                      value={form.moTa}
-                      onChange={xuLyThayDoi}
-                      className={`${inputClass} resize-y`}
-                      placeholder="Giới thiệu không gian, kiến trúc và cảnh quan..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      Thể loại cơ sở <span className="text-red-500">*</span>
-                    </label>
-
-                    <select
-                      required
-                      name="theLoaiHomeStay"
-                      value={form.theLoaiHomeStay}
-                      onChange={xuLyThayDoi}
-                      className={inputClass}
-                    >
-                      <option value="">Chọn thể loại</option>
-                      <option value="NGHI_DUONG">Nghỉ dưỡng</option>
-                      <option value="GIA_DINH">HomeStay gia đình</option>
-                      <option value="GAN_BIEN">HomeStay gần biển</option>
-                      <option value="VUNG_NUI">HomeStay vùng núi</option>
-                      <option value="TRUNG_TAM_THANH_PHO">HomeStay trung tâm thành phố</option>
-                      <option value="NHA_VUON">Nhà vườn</option>
-                      <option value="CAN_HO">Căn hộ</option>
-                      <option value="NHA_GO">Nhà gỗ</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      Số điện thoại <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                      required
-                      type="tel"
-                      name="soDienThoai"
-                      value={form.soDienThoai}
-                      onChange={xuLyThayDoi}
-                      className={inputClass}
-                      placeholder="09xxxxxxxx"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>
-                      Email liên hệ <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                      required
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={xuLyThayDoi}
-                      className={inputClass}
-                      placeholder="homestay@example.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      Tỉnh / Thành phố{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-
-                    <select
-                      required
-                      name="tinhThanh"
-                      value={form.tinhThanh}
-                      onChange={(e) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          tinhThanh: e.target.value,
-                          phuongXa: "",
-                        }));
-                      }}
-                      className={inputClass}
-                    >
-                      <option value="">Chọn tỉnh/thành phố</option>
-                      {danhSachTinhThanh.map((tinh) => (
-                        <option key={tinh.code} value={tinh.name}>
-                          {tinh.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-
-                  <div>
-                    <label className={labelClass}>
-                      Phường / Xã <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="phuongXa"
-                      value={form.phuongXa}
-                      onChange={xuLyThayDoi}
-                      required
-                      disabled={!form.tinhThanh}
-                      className={inputClass}
-                    >
-                      <option value="">Chọn phường/xã</option>
-
-                      {danhSachPhuongXa.map((phuong) => (
-                        <option key={phuong.code} value={phuong.name}>
-                          {phuong.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <MapPin size={14} className="mr-1 inline" />
-                      Địa chỉ chi tiết{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                      required
-                      name="diaChi"
-                      value={form.diaChi}
-                      onChange={xuLyThayDoi}
-                      className={inputClass}
-                      placeholder="Số nhà, tên đường..."
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* HÌNH ẢNH HOMESTAY */}
-              <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex flex-col justify-between gap-4 border-b border-gray-100 bg-gray-50 p-6 sm:flex-row sm:items-center">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
-                      <ImagePlus size={23} />
-                    </div>
-
-                    <div>
-                      <h2 className="text-lg font-bold">
-                        2. Hình ảnh thực tế HomeStay
-                      </h2>
-
-                      <p className="mt-1 text-sm leading-6 text-gray-500">
-                        Tải lên ít nhất 5 ảnh, tối đa 20 ảnh.
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                    {anhList.length} ảnh
-                  </span>
-                </div>
-
-                <div className="p-6 md:p-8">
-                  <input
-                    ref={inputFileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    onChange={xuLyChonAnh}
-                    className="hidden"
+          <Grid container spacing={2}>
+            {/* Cột trái */}
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <Stack spacing={2}>
+                <Paper elevation={0} sx={sectionSx}>
+                  <SectionHeading
+                    number="01"
+                    icon={<House size={20} />}
+                    title="Thông tin cơ sở"
+                    description="Thông tin nhận diện và địa chỉ HomeStay của bạn"
                   />
-
-                  <button
-                    type="button"
-                    onClick={() => inputFileRef.current?.click()}
-                    className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-10 text-center transition hover:border-emerald-600 hover:bg-emerald-50/50"
-                  >
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                      <Upload size={26} />
-                    </div>
-
-                    <p className="text-sm font-semibold text-gray-800">
-                      <span className="text-emerald-700">
-                        Nhấn để chọn ảnh
-                      </span>{" "}
-                      từ máy tính
-                    </p>
-
-                    <p className="mt-2 text-xs leading-5 text-gray-500">
-                      Hỗ trợ JPG, PNG, WEBP · Tối đa 10MB mỗi ảnh
-                    </p>
-                  </button>
-
-                  <div className="mt-6 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold">
-                      Danh sách ảnh đã chọn
-                    </h3>
-
-                    <span className="text-xs text-gray-500">
-                      {anhList.length} ảnh
-                    </span>
-                  </div>
-
-                  {anhList.length === 0 ? (
-                    <div className="mt-4 rounded-xl border border-gray-100 px-4 py-8 text-center">
-                      <ImagePlus
-                        size={32}
-                        className="mx-auto text-gray-300"
-                      />
-
-                      <p className="mt-3 text-sm text-gray-500">
-                        Chưa có ảnh nào. Hãy chọn ảnh HomeStay của bạn.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                      {anhList.map((anh) => (
-                        <div
-                          key={anh.id}
-                          className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-gray-200"
+                  <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Grid container spacing={1.8}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField fullWidth required size="small" label="Tên cơ sở HomeStay" name="tenHomeStay" value={form.tenHomeStay} onChange={xuLyThayDoi} placeholder="Ví dụ: Pine Hill Serenity Villa Đà Lạt" sx={emeraldFieldSx} />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField fullWidth required size="small" multiline rows={3} label="Mô tả giới thiệu HomeStay" name="moTa" value={form.moTa} onChange={xuLyThayDoi} placeholder="Giới thiệu không gian, kiến trúc và cảnh quan..." sx={emeraldFieldSx} />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          select
+                          fullWidth
+                          required
+                          size="small"
+                          label="Thể loại cơ sở"
+                          name="theLoaiHomeStay"
+                          value={form.theLoaiHomeStay}
+                          onChange={xuLyThayDoi}
+                          sx={emeraldFieldSx}
+                          disabled={dangTaiTheLoai}
                         >
-                          <img
-                            src={anh.url}
-                            alt="Ảnh HomeStay"
-                            className="h-full w-full object-cover"
-                          />
+                          <MenuItem value="" disabled>
+                            {dangTaiTheLoai
+                              ? "Đang tải thể loại..."
+                              : "Chọn thể loại"}
+                          </MenuItem>
 
-                          {anhBia === anh.id && (
-                            <span className="absolute left-2 top-2 rounded-md bg-emerald-700 px-2 py-1 text-[10px] font-bold text-white">
-                              Ảnh bìa
-                            </span>
-                          )}
+                          {danhSachTheLoai.map((item) => (
+                            <MenuItem key={item.value} value={item.value}>
+                              {item.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField fullWidth required size="small" type="tel" label="Số điện thoại" name="soDienThoai" value={form.soDienThoai} onChange={xuLyThayDoi} placeholder="09xxxxxxxx" sx={emeraldFieldSx} />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField fullWidth required size="small" type="email" label="Email liên hệ" name="email" value={form.email} onChange={xuLyThayDoi} placeholder="homestay@example.com" sx={emeraldFieldSx} />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField select fullWidth required size="small" label="Tỉnh / Thành phố" name="tinhThanh" value={form.tinhThanh} onChange={(e) => setForm((prev) => ({ ...prev, tinhThanh: e.target.value, phuongXa: "" }))} sx={emeraldFieldSx}>
+                          <MenuItem value="" disabled>Chọn tỉnh/thành phố</MenuItem>
+                          {danhSachTinhThanh.map((tinh) => <MenuItem key={tinh.code} value={tinh.name}>{tinh.name}</MenuItem>)}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField select fullWidth required size="small" label="Phường / Xã" name="phuongXa" value={form.phuongXa} onChange={xuLyThayDoi} disabled={!form.tinhThanh} sx={emeraldFieldSx}>
+                          <MenuItem value="" disabled>Chọn phường/xã</MenuItem>
+                          {danhSachPhuongXa.map((phuong) => <MenuItem key={phuong.code} value={phuong.name}>{phuong.name}</MenuItem>)}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField fullWidth required size="small" label="Địa chỉ chi tiết" name="diaChi" value={form.diaChi} onChange={xuLyThayDoi} placeholder="Số nhà, tên đường..." slotProps={{ input: { startAdornment: <MapPin size={16} style={{ marginRight: 8, color: "#94a3b8", flexShrink: 0 }} /> } }} sx={emeraldFieldSx} />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Paper>
 
-                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
-                            <button
-                              type="button"
-                              title="Đặt làm ảnh bìa"
-                              onClick={() => setAnhBia(anh.id)}
-                              className="rounded-lg bg-white p-2 text-emerald-700 hover:bg-emerald-50"
-                            >
-                              <Star size={16} />
-                            </button>
-
-                            <button
-                              type="button"
-                              title="Xóa ảnh"
-                              onClick={() => xoaAnh(anh.id)}
-                              className="rounded-lg bg-white p-2 text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {anhList.length > 0 && anhList.length < 5 && (
-                    <p className="mt-4 text-sm text-amber-700">
-                      Bạn cần tải thêm {5 - anhList.length} ảnh để đủ số
-                      lượng tối thiểu.
-                    </p>
-                  )}
-                </div>
-              </section>
-            </div>
-
-            {/* CỘT PHẢI */}
-            <aside className="flex flex-col gap-6 lg:col-span-4">
-              <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                    <FileText size={21} />
-                  </div>
-
-                  <h2 className="font-bold">Thông tin hồ sơ</h2>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2
-                      size={19}
-                      className="mt-0.5 shrink-0 text-emerald-600"
-                    />
-
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Thông tin HomeStay
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-gray-500">
-                        Cung cấp thông tin chính xác về cơ sở lưu trú.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <ImagePlus
-                      size={19}
-                      className="mt-0.5 shrink-0 text-emerald-600"
-                    />
-
-                    <div>
-                      <p className="text-sm font-semibold">Hình ảnh cơ sở</p>
-                      <p className="mt-1 text-xs leading-5 text-gray-500">
-                        Chuẩn bị tối thiểu 5 ảnh thực tế.
-                      </p>
-                    </div>
-                  </div>
-
-
-                  <div className="flex items-start gap-3">
-                    <ImagePlus
-                      size={19}
-                      className="mt-0.5 shrink-0 text-emerald-600"
-                    />
-
-
-                  </div>
-
-
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck
-                      size={19}
-                      className="mt-0.5 shrink-0 text-emerald-600"
-                    />
-
-                    <div>
-                      <p className="text-sm font-semibold">Xét duyệt hồ sơ</p>
-                      <p className="mt-1 text-xs leading-5 text-gray-500">
-                        Hồ sơ sẽ được xử lý theo quy trình của StayWise.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6">
-                <ShieldCheck size={28} className="text-emerald-700" />
-
-                <h3 className="mt-3 font-bold text-emerald-900">
-                  Lưu ý khi đăng ký
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-emerald-800">
-                  Hãy kiểm tra thông tin liên hệ, địa chỉ và hình ảnh trước
-                  khi gửi hồ sơ. Các trường bắt buộc cần được điền đầy đủ.
-                </p>
-              </section>
-
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold">Số ảnh hiện tại</p>
-
-                <div className="mt-3 flex items-end justify-between">
-                  <span className="text-3xl font-bold text-emerald-700">
-                    {anhList.length}
-                  </span>
-
-                  <span className="text-sm text-gray-500"> ảnh</span>
-                </div>
-
-
-
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    className="h-full rounded-full bg-emerald-600 transition-all"
-                    style={{
-                      width: `${(anhList.length / 20) * 100}%`,
-                    }}
+                <Paper elevation={0} sx={sectionSx}>
+                  <SectionHeading
+                    number="02"
+                    icon={<ImagePlus size={20} />}
+                    title="Hình ảnh HomeStay"
+                    description="Tải lên từ 5 đến 20 hình ảnh thực tế"
+                    trailing={
+                      <Chip
+                        label={`${anhList.length}/20`}
+                        size="small"
+                        sx={{ bgcolor: "#e7f6ee", color: "#087653", fontWeight: 750, borderRadius: 2 }}
+                      />
+                    }
                   />
-                </div>
+                  <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <input ref={inputFileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleChonAnh} style={{ display: "none" }} />
+                    <Box
+                      onClick={() => inputFileRef.current?.click()}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") inputFileRef.current?.click();
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        p: { xs: 2, md: 2.5 },
+                        border: "1px dashed #9ccdb7",
+                        borderRadius: "12px",
+                        bgcolor: "#f7fcf9",
+                        transition: "0.2s",
+                        "&:hover": { borderColor: "#07845f", bgcolor: "#eff9f3" },
+                      }}
+                    >
+                      <Box sx={{ width: 46, height: 46, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: "12px", bgcolor: "#e1f4e9", color: "#087653" }}>
+                        <Upload size={21} />
+                      </Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 750, color: "#234236" }}>
+                          Chọn ảnh từ thiết bị
+                        </Typography>
+                        <Typography sx={{ fontSize: 11.5, color: "#7b8981", mt: 0.35 }}>
+                          JPG, PNG hoặc WEBP · Tối đa 10MB mỗi ảnh
+                        </Typography>
+                      </Box>
+                      <Button size="small" variant="outlined" sx={{ display: { xs: "none", sm: "inline-flex" }, borderColor: "#b7d9c6", color: "#087653", borderRadius: 2, textTransform: "none", fontWeight: 700 }}>
+                        Duyệt ảnh
+                      </Button>
+                    </Box>
 
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 2, mb: 1.2 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 750, color: "#263b32" }}>Ảnh đã tải lên</Typography>
+                      <Typography sx={{ fontSize: 11.5, color: "#819087" }}>{anhList.length} ảnh đã chọn</Typography>
+                    </Box>
 
-              </div>
-            </aside>
-          </div>
+                    {anhList.length === 0 ? (
+                      <Box sx={{ py: 3, textAlign: "center", border: "1px solid #edf1ee", borderRadius: 2.5 }}>
+                        <ImagePlus size={25} color="#b7c5bd" />
+                        <Typography sx={{ mt: 0.8, fontSize: 12, color: "#819087" }}>Ảnh bạn chọn sẽ hiển thị tại đây</Typography>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" }, gap: 1.3 }}>
+                        {anhList.map((anh) => (
+                          <Box key={anh.id} sx={{ position: "relative", aspectRatio: "4 / 3", overflow: "hidden", border: anhBia === anh.id ? "2px solid #07845f" : "1px solid #e4ebe6", borderRadius: 2.5, "&:hover .image-actions": { opacity: 1 } }}>
+                            <Box component="img" src={anh.url} alt="Ảnh HomeStay" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            {anhBia === anh.id && <Chip label="Ảnh đại diện" size="small" icon={<Star size={12} />} sx={{ position: "absolute", top: 7, left: 7, height: 23, fontSize: 10, fontWeight: 750, bgcolor: "#087653", color: "#fff", "& .MuiChip-icon": { color: "#fff" } }} />}
+                            <Box className="image-actions" sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 1, bgcolor: "rgba(12, 30, 22, 0.42)", opacity: { xs: 1, sm: 0 }, transition: "0.2s" }}>
+                              <Tooltip title="Đặt làm ảnh đại diện"><IconButton size="small" onClick={() => chonAnhBia(anh.id)} sx={{ bgcolor: "#fff", color: "#087653", "&:hover": { bgcolor: "#e8f6ed" } }}><Star size={15} /></IconButton></Tooltip>
+                              <Tooltip title="Xóa ảnh"><IconButton size="small" onClick={() => xoaAnh(anh.id)} sx={{ bgcolor: "#fff", color: "#dc2626", "&:hover": { bgcolor: "#fef2f2" } }}><Trash2 size={15} /></IconButton></Tooltip>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                    {anhList.length > 0 && anhList.length < 5 && (
+                      <Typography sx={{ mt: 1.3, fontSize: 11.5, color: "#b7791f", fontWeight: 650 }}>
+                        Cần thêm {5 - anhList.length} ảnh để đạt số lượng tối thiểu.
+                      </Typography>
+                    )}
+                  </Box>
+                </Paper>
+              </Stack>
+            </Grid>
 
+            {/* Cột phải */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Box sx={{ position: { lg: "sticky" }, top: { lg: 16 } }}>
+                <Paper elevation={0} sx={sectionSx}>
+                  <SectionHeading
+                    number="03"
+                    icon={<Sparkles size={20} />}
+                    title="Tiện ích & dịch vụ"
+                    description="Tạo trải nghiệm tốt hơn cho khách"
+                  />
+                  <Box sx={{ p: { xs: 2, md: 2.2 } }}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 0.9 }}>
+                      {dangTaiTienIch ? (
+                        <Typography sx={{ fontSize: 12, color: "#64748b", py: 2 }}>
+                          Đang tải danh sách tiện ích...
+                        </Typography>
+                      ) : danhSachTienIch.length === 0 ? (
+                        <Typography sx={{ fontSize: 12, color: "#64748b", py: 2 }}>
+                          Chưa có tiện ích nào.
+                        </Typography>
+                      ) : (
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                            gap: 0.9,
+                          }}
+                        >
+                          {danhSachTienIch
+                            .filter((item) => item.trangThai === "DANG_HOAT_DONG")
+                            .map((item) => {
+                              const daChon = tienIchDaChon.includes(item.id);
 
-          {/* NÚT CUỐI TRANG */}
-          <div className="mt-8 flex flex-col-reverse justify-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:flex-row sm:p-6">
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
-            >
-              Quay lại
-            </button>
+                              return (
+                                <Box
+                                  key={item.id}
+                                  onClick={() => toggleTienIch(item.id)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      toggleTienIch(item.id);
+                                    }
+                                  }}
+                                  sx={{
+                                    minHeight: 48,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.8,
+                                    px: 1,
+                                    py: 0.8,
+                                    border: "1px solid",
+                                    borderColor: daChon ? "#75b99a" : "#e7ece9",
+                                    borderRadius: "9px",
+                                    bgcolor: daChon ? "#eff9f3" : "#fff",
+                                    color: daChon ? "#176447" : "#5f6e65",
+                                    "&:hover": {
+                                      borderColor: "#75b99a",
+                                    },
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 17,
+                                      height: 17,
+                                      flexShrink: 0,
+                                      display: "grid",
+                                      placeItems: "center",
+                                      border: "1px solid",
+                                      borderColor: daChon ? "#07845f" : "#cbd5ce",
+                                      borderRadius: "5px",
+                                      bgcolor: daChon ? "#07845f" : "#fff",
+                                      color: "#fff",
+                                    }}
+                                  >
+                                    {daChon && <Check size={12} strokeWidth={3} />}
+                                  </Box>
 
-            <button
-              type="submit"
-              disabled={dangLuu}
-              className="rounded-xl bg-green-700 px-6 py-3 text-white
-             hover:bg-green-800
-             disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {dangLuu ? "Đang đăng ký..." : "Đăng ký HomeStay"}
-            </button>
-          </div>
+                                  <Typography
+                                    sx={{
+                                      fontSize: 11.2,
+                                      lineHeight: 1.3,
+                                      fontWeight: daChon ? 700 : 500,
+                                    }}
+                                  >
+                                    {item.tenTienIch}
+                                  </Typography>
+                                </Box>
+                              );
+                            })}
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Divider sx={{ my: 2.2, borderColor: "#edf1ee" }} />
+
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                        <ConciergeBell size={17} color="#087653" />
+                        <Typography sx={{ fontSize: 13, fontWeight: 750, color: "#263b32" }}>Dịch vụ bổ sung</Typography>
+                      </Box>
+                      <Chip size="small" label={`${dichVuDaChon.length} đang bật`} sx={{ height: 23, bgcolor: "#e7f6ee", color: "#087653", fontWeight: 750, fontSize: 10.5 }} />
+                    </Box>
+                    <Stack spacing={1}>
+                      {dangTaiDichVu ? (
+                        <Typography sx={{ fontSize: 12, color: "#64748b", py: 2 }}>
+                          Đang tải danh sách dịch vụ...
+                        </Typography>
+                      ) : danhSachDichVu.length === 0 ? (
+                        <Typography sx={{ fontSize: 12, color: "#64748b", py: 2 }}>
+                          Chưa có dịch vụ nào.
+                        </Typography>
+                      ) : (
+                        <Stack spacing={1}>
+                          {danhSachDichVu
+                            .filter((dv) => dv.trangThai === "DANG_HOAT_DONG")
+                            .map((dv) => {
+                              const kichHoat = dichVuDaChon.includes(dv.id);
+
+                              return (
+                                <Paper
+                                  key={dv.id}
+                                  elevation={0}
+                                  sx={{
+                                    p: 1.25,
+                                    border: "1px solid",
+                                    borderColor: kichHoat ? "#8bc5a6" : "#e7ece9",
+                                    borderRadius: "10px",
+                                    bgcolor: kichHoat ? "#f2faf5" : "#fff",
+                                  }}
+                                >
+                                  <Stack
+                                    component="div"
+                                    direction="row"
+                                    sx={{ alignItems: "center", justifyContent: "space-between" }}
+                                  >
+                                    <Typography
+                                      sx={{
+                                        fontSize: 12.5,
+                                        fontWeight: 700,
+                                        color: "#263b32",
+                                      }}
+                                    >
+                                      {dv.tenDichVu}
+                                    </Typography>
+
+                                    <Switch
+                                      checked={kichHoat}
+                                      onChange={() => toggleDichVu(dv.id)}
+                                      size="small"
+                                    />
+                                  </Stack>
+                                </Paper>
+                              );
+                            })}
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Box>
+                </Paper>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Thanh hành động cố định phía dưới */}
+          <Paper
+            elevation={0}
+            sx={{
+              position: "fixed",
+              zIndex: 10,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderTop: "1px solid #e4ebe6",
+              bgcolor: "rgba(255,255,255,0.96)",
+              backdropFilter: "blur(12px)",
+              px: 2,
+              py: 1.3,
+            }}
+          >
+            <Container maxWidth="xl" sx={{ px: { xs: 0, sm: 1 } }}>
+              <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 750, color: "#263b32" }}>Hoàn tất đăng ký HomeStay</Typography>
+                  <Typography sx={{ fontSize: 10.5, color: "#829087", mt: 0.2 }}>
+                    {anhList.length}/5 ảnh tối thiểu · {tienIchDaChon.length} tiện ích đã chọn
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    startIcon={<ArrowLeft size={16} />}
+                    onClick={() => window.history.back()}
+                    sx={{ borderRadius: "9px", px: 2, py: 0.9, textTransform: "none", fontWeight: 700, fontSize: 12, color: "#52645a", borderColor: "#d5dfd8" }}
+                  >
+                    Quay lại
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={dangLuu}
+                    disableElevation
+                    endIcon={!dangLuu && <ArrowRight size={16} />}
+                    sx={{ borderRadius: "9px", px: 2.3, py: 0.9, textTransform: "none", fontWeight: 750, fontSize: 12, bgcolor: "#087653", "&:hover": { bgcolor: "#066346" } }}
+                  >
+                    {dangLuu ? "Đang đăng ký..." : "Đăng ký HomeStay"}
+                  </Button>
+                </Stack>
+              </Stack>
+            </Container>
+          </Paper>
         </form>
-      </main>
-    </div>
+      </Container>
+    </Box>
   );
 }

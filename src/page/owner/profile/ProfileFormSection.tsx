@@ -17,14 +17,11 @@ import {
     PersonOutlined,
     PhoneIphoneOutlined,
     EmailOutlined,
-    VerifiedOutlined,
     UploadFileOutlined,
-    VisibilityOutlined,
     ShieldOutlined,
     DescriptionOutlined,
     InfoOutlined,
-    CheckCircleOutlined,
-    InsertDriveFileOutlined,
+    CheckCircleRounded,
 } from "@mui/icons-material";
 import { SaveIcon } from "lucide-react";
 
@@ -119,7 +116,7 @@ export const ProfileFormSection = ({
     previewCCCDMatTruoc,
     previewCCCDMatSau,
     previewGiayPhep,
-
+    trangThaiXacMinh,
     onChange,
 
     onAvatarChange,
@@ -135,7 +132,7 @@ export const ProfileFormSection = ({
     anhCCCDMatTruoc: string | null;
     anhCCCDMatSau: string | null;
     anhGiayPhepKinhDoanh: string | null;
-
+    trangThaiXacMinh: string;
     previewAnhDaiDien: string | null;
     previewCCCDMatTruoc: string | null;
     previewCCCDMatSau: string | null;
@@ -288,12 +285,22 @@ export const ProfileFormSection = ({
                                 </Typography>
                             </Box>
 
-                            <Chip
-                                label="Hồ sơ xác minh"
-                                color="info"
-                                size="small"
-                                variant="outlined"
-                            />
+                            {trangThaiXacMinh === "DA_XAC_MINH" ? (
+                                <Chip
+                                    icon={<CheckCircleRounded />}
+                                    label="Đã xác minh"
+                                    color="success"
+                                    size="small"
+                                    sx={{ fontWeight: 700 }}
+                                />
+                            ) : (
+                                <Chip
+                                    label="Chưa xác minh"
+                                    color="warning"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
                         </Stack>
                     </Box>
 
@@ -362,12 +369,22 @@ export const ProfileFormSection = ({
                                 </Typography>
                             </Box>
 
-                            <Chip
-                                label="Tài liệu kinh doanh"
-                                color="info"
-                                size="small"
-                                variant="outlined"
-                            />
+                            {trangThaiXacMinh === "DA_XAC_MINH" ? (
+                                <Chip
+                                    icon={<CheckCircleRounded />}
+                                    label="Đã xác minh"
+                                    color="success"
+                                    size="small"
+                                    sx={{ fontWeight: 700 }}
+                                />
+                            ) : (
+                                <Chip
+                                    label="Chưa xác minh"
+                                    color="warning"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
                         </Stack>
                     </Box>
 
