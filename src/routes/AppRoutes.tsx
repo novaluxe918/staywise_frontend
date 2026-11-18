@@ -19,6 +19,7 @@ import LayoutOwner from "../page/owner/layout/LayoutOwner";
 import LayoutAdmin from "../page/admin/layout/LayoutAdmin";
 import QuanLyOwner from "../page/admin/homestayowner/QuanLyOwner";
 import QuanLyHomeStay from "../page/admin/homestay/QuanLyHomeStay";
+import QuanLyUser from "../page/admin/user/QuanLyUser";
 
 
 
@@ -48,6 +49,8 @@ function AppRoutes() {
         <Route path="dich-vu" element={<QuanLyDichVu />} />
 
         <Route path="homestays" element={<QuanLyHomeStay />} />
+
+        <Route path="users" element={<QuanLyUser />} />
       </Route>
 
       {/* Giao diện quản lý OWNER */}

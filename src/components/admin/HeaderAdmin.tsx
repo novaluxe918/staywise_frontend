@@ -62,6 +62,7 @@ function HeaderAdmin() {
             position="fixed"
             elevation={0}
             sx={{
+                zIndex: 1000,
                 width: `calc(100% - ${DRAWER_WIDTH}px)`,
                 ml: `${DRAWER_WIDTH}px`,
                 bgcolor: 'rgba(255, 255, 255, 0.85)',

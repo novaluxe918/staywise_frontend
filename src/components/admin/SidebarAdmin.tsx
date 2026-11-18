@@ -44,11 +44,7 @@ const menuItems = [
         text: 'Quản lý HomeStay',
         icon: <HomeWorkRoundedIcon fontSize="small" />
     },
-    {
-        path: '/admin/danh-gia',
-        text: 'Quản lý Đánh giá',
-        icon: <RateReviewRoundedIcon fontSize="small" />
-    },
+   
     {
         path: '/admin/dich-vu',
         text: 'Quản lý Dịch vụ',
@@ -64,6 +60,12 @@ const menuItems = [
         path: '/admin/tien-ichcs',
         text: 'Quản lý Tiện Ích',
         icon: <LifeBuoy size={18} />
+    },
+
+     {
+        path: '/admin/danh-gia',
+        text: 'Quản lý Đánh giá',
+        icon: <RateReviewRoundedIcon fontSize="small" />
     }
 ];
 

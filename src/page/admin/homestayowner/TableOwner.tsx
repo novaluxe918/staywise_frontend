@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Table,
@@ -19,6 +19,7 @@ import {
     Select,
     FormControl,
     alpha,
+    TablePagination,
 } from '@mui/material';
 
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -73,43 +74,55 @@ const getTrangThaiInfo = (trangThai?: string) => {
 
 interface Props {
     owners?: OwnerRow[];
-    onSearchChange?: (keyword: string) => void;
+    totalElements?: number;
+    onSearchChange: (keyword: string) => void;
+    onPageChange: (page: number, rowsPerPage: number) => void;
     handleXemGiayTo: (row: OwnerRow) => void;
     handleCapNhatTrangThai?: (row: OwnerRow) => void;
 }
 
 function TableOwner({
     owners = [],
+    totalElements = owners.length,
     onSearchChange,
+    onPageChange,
     handleXemGiayTo,
     handleCapNhatTrangThai,
 }: Props) {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
-    // Tìm kiếm
-    const handleSearch = (value: string) => {
-        setSearch(value);
-        onSearchChange?.(value);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(0);
+            onSearchChange(search.trim());
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Chuyển trang
+    const handleChangePage = (
+        _: unknown,
+        newPage: number
+    ) => {
+        setPage(newPage);
+        onPageChange(newPage, rowsPerPage);
     };
 
-    // Lọc dữ liệu
-    const filteredOwners = owners.filter((row) => {
-        const keyword = search.trim().toLowerCase();
+    // Thay đổi số dòng mỗi trang
+    const handleChangeRowsPerPage = (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const newSize = Number(e.target.value);
 
-        const matchKeyword =
-            !keyword ||
-            row.hoTen?.toLowerCase().includes(keyword) ||
-            row.email?.toLowerCase().includes(keyword) ||
-            row.soDienThoai?.toLowerCase().includes(keyword);
+        setRowsPerPage(newSize);
+        setPage(0);
 
-        const matchStatus =
-            statusFilter === 'all' ||
-            row.trangThaiXacMinh === statusFilter;
-
-        return matchKeyword && matchStatus;
-    });
-
+        onPageChange(0, newSize);
+    };
     return (
         <Paper
             elevation={0}
@@ -141,9 +154,9 @@ function TableOwner({
                     {/* Tìm kiếm */}
                     <TextField
                         size="small"
-                        placeholder="Tìm tên, số điện thoại, email..."
+                        placeholder="Tìm tên chủ HomeStay..."
                         value={search}
-                        onChange={(e) => handleSearch(e.target.value)}
+                        onChange={(e) => setSearch(e.target.value)}
                         sx={{
                             width: { xs: '100%', sm: 320 },
                             '& .MuiOutlinedInput-root': {
@@ -180,7 +193,7 @@ function TableOwner({
                                     <InputAdornment position="end">
                                         <IconButton
                                             size="small"
-                                            onClick={() => handleSearch('')}
+                                            onClick={() => setSearch('')}
                                         >
                                             <CloseRoundedIcon fontSize="small" />
                                         </IconButton>
@@ -194,7 +207,10 @@ function TableOwner({
                     <FormControl size="small">
                         <Select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setPage(0);
+                            }}
                             displayEmpty
                             startAdornment={
                                 <FilterListRoundedIcon
@@ -235,6 +251,7 @@ function TableOwner({
                     </FormControl>
                 </Stack>
 
+                {/* Tổng số OWNER */}
                 <Typography
                     variant="body2"
                     sx={{
@@ -242,7 +259,7 @@ function TableOwner({
                         fontSize: '0.8rem',
                     }}
                 >
-                    Tổng cộng: <strong>{filteredOwners.length}</strong> chủ Homestay
+                    Tổng cộng: <strong>{totalElements}</strong> chủ HomeStay
                 </Typography>
             </Box>
 
@@ -296,7 +313,7 @@ function TableOwner({
                     </TableHead>
 
                     <TableBody>
-                        {filteredOwners.length === 0 ? (
+                        {owners.length === 0 ? (
                             <TableRow>
                                 <TableCell
                                     colSpan={6}
@@ -347,7 +364,7 @@ function TableOwner({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredOwners.map((row, index) => {
+                            owners.map((row, index) => {
                                 const trangThai = getTrangThaiInfo(
                                     row.trangThaiXacMinh
                                 );
@@ -532,7 +549,7 @@ function TableOwner({
                                                 <IconButton
                                                     size="small"
                                                     title="Cập nhật trạng thái"
-                                                    
+
                                                     onClick={() =>
                                                         handleCapNhatTrangThai?.(row)
                                                     }
@@ -556,6 +573,20 @@ function TableOwner({
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            <TablePagination
+                component="div"
+                count={totalElements}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 20]}
+                labelRowsPerPage="Số dòng mỗi trang"
+                labelDisplayedRows={({ from, to, count }) =>
+                    `Đang hiển thị ${from}-${to} trên tổng số ${count} chủ HomeStay`
+                }
+            />
         </Paper>
     );
 }

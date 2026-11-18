@@ -1,7 +1,7 @@
 
 
-import type { CapNhatTrangThaiXacMinhRequest, NguoiDungRequest, NguoiDungResponse, OwnerRow } from "../types/nguoiDung";
-import api from "./api";
+import type { CapNhatTrangThaiXacMinhRequest, NguoiDungQuanLy, NguoiDungRequest, NguoiDungResponse, NguoiDungSearchParams, OwnerRow } from "../types/nguoiDung";
+import api, { type PageParams, type PageResponse } from "./api";
 
 // Lấy thông tin
 export const layThongTinNguoiDung = async () => {
@@ -58,12 +58,17 @@ export const capNhatAnhDaiDien = async(file: File) => {
     );
 }
 
-export const getDanhSachOwners = async (): Promise<OwnerRow[]> => {
-    const response = await api.get<OwnerRow[]>("/admin/danhSachOwner");
+export const getDanhSachOwners = async (
+    params: PageParams
+): Promise<PageResponse<OwnerRow>> => {
+
+    const response = await api.get<PageResponse<OwnerRow>>(
+        "/admin/danhSachOwner",
+        { params }
+    );
 
     return response.data;
-}
-
+};
 
 
 export const capNhatTrangThaiXacMinh = async (
@@ -83,3 +88,9 @@ export const getThongTinHoSo = async () => {
     const response = await api.get("/nguoidung/thong-bao");
     return response.data;
 };
+
+export const getThongTinNguoiDung = async(params: NguoiDungSearchParams): Promise<PageResponse<NguoiDungQuanLy>> => {
+     const response = await api.get("nguoidung/show-all", {params})
+
+     return response.data;
+}
