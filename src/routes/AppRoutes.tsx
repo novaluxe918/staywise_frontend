@@ -20,6 +20,7 @@ import LayoutAdmin from "../page/admin/layout/LayoutAdmin";
 import QuanLyOwner from "../page/admin/homestayowner/QuanLyOwner";
 import QuanLyHomeStay from "../page/admin/homestay/QuanLyHomeStay";
 import QuanLyUser from "../page/admin/user/QuanLyUser";
+import HoSo from "../page/owner/homestay/HoSo";
 
 
 
@@ -57,7 +58,7 @@ function AppRoutes() {
       <Route element={<LayoutOwner />}>
         <Route path="/tong-quan" element={<Dasboard />} />
         <Route path="/quan-ly-phong" element={<QuanLyPhong />} />
-
+        <Route path="/ho-so" element={<HoSo />} />
       </Route>
 
       {/* Đăng ký thông tin HomeStay */}

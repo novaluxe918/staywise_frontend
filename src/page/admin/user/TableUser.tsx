@@ -25,10 +25,10 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import type { NguoiDungQuanLy } from '../../../types/nguoiDung';
+import type { NguoiDungResponse } from '../../../types/nguoiDung';
 
 interface Props {
-    nguoiDungs: NguoiDungQuanLy[];
+    nguoiDungs: NguoiDungResponse[];
     loading: boolean;
 
     tuKhoa: string;
@@ -44,9 +44,10 @@ interface Props {
     onTrangThaiChange: (value: string) => void;
     onPageChange: (newPage: number) => void;
     onRowsPerPageChange: (value: number) => void;
+    handleXemChiTiet: (user: NguoiDungResponse) => void;
+    handleOpenConfirm: (user: NguoiDungResponse) => void;
 }
 
-// Lấy chữ cái đầu làm Avatar fallback
 const getInitials = (name: string) => {
     if (!name?.trim()) return '?';
 
@@ -62,7 +63,7 @@ const getInitials = (name: string) => {
     ).toUpperCase();
 };
 
-// Badge vai trò
+
 const getRoleBadge = (role: string) => {
     switch (role) {
         case 'ADMIN':
@@ -131,7 +132,9 @@ function TableUser({
     onVaiTroChange,
     onTrangThaiChange,
     onPageChange,
-    onRowsPerPageChange
+    onRowsPerPageChange,
+    handleXemChiTiet,
+    handleOpenConfirm
 }: Props) {
     return (
         <Paper
@@ -458,6 +461,7 @@ function TableUser({
                                                     <Tooltip title="Xem chi tiết">
                                                         <IconButton
                                                             size="small"
+                                                            onClick={() => handleXemChiTiet(user)}
                                                             sx={{
                                                                 color: '#475569',
                                                                 '&:hover': {
@@ -479,6 +483,7 @@ function TableUser({
                                                     >
                                                         <IconButton
                                                             size="small"
+                                                            onClick={() => handleOpenConfirm(user)}
                                                             sx={{
                                                                 color: isLocked
                                                                     ? '#DC2626'

@@ -10,8 +10,6 @@ import {
     ListItemText,
     Typography,
     Chip,
-    Avatar,
-    Stack,
 } from '@mui/material';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
@@ -19,6 +17,7 @@ import VerifiedUserRoundedIcon from '@mui/icons-material/VerifiedUserRounded';
 import HomeWorkRoundedIcon from '@mui/icons-material/HomeWorkRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import { ConciergeBell, HandPlatter, LifeBuoy } from 'lucide-react';
+import logo from "../../assets/logo.png";
 
 export const DRAWER_WIDTH = 260;
 
@@ -44,7 +43,7 @@ const menuItems = [
         text: 'Quản lý HomeStay',
         icon: <HomeWorkRoundedIcon fontSize="small" />
     },
-   
+
     {
         path: '/admin/dich-vu',
         text: 'Quản lý Dịch vụ',
@@ -62,7 +61,7 @@ const menuItems = [
         icon: <LifeBuoy size={18} />
     },
 
-     {
+    {
         path: '/admin/danh-gia',
         text: 'Quản lý Đánh giá',
         icon: <RateReviewRoundedIcon fontSize="small" />
@@ -90,17 +89,29 @@ function SidebarAdmin() {
             {/* Logo & Brand Header */}
             <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar
+                    <Box
                         sx={{
-                            bgcolor: '#00b894',
-                            width: 36,
-                            height: 36,
-                            fontSize: '1rem',
-                            fontWeight: 700,
+                            width: 45,
+                            height: 45,
+                            flexShrink: 0,
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            bgcolor: "#fff",
+                            border: "1px solid #00b894",
                         }}
                     >
-                        SW
-                    </Avatar>
+                        <Box
+                            component="img"
+                            src={logo}
+                            alt="StayWise Logo"
+                            sx={{
+                                width: 45,
+                                height: 45,
+                                objectFit: "cover",
+                                display: "block",
+                            }}
+                        />
+                    </Box>
                     <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff', letterSpacing: -0.5 }}>
                         Stay<span style={{ color: '#00b894' }}>wise</span>
                     </Typography>
@@ -138,7 +149,7 @@ function SidebarAdmin() {
             <List sx={{ px: 1.5 }}>
                 {menuItems.map((item) => {
                     // Kiểm tra route hiện tại để kích hoạt active
-              const isActive = location.pathname === item.path;
+                    const isActive = location.pathname === item.path;
 
                     return (
                         <ListItem key={item.path} disablePadding sx={{ mb: 0.8 }}>

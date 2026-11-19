@@ -1,15 +1,21 @@
 import type { PageParams } from "../services/api";
 
 export interface NguoiDungResponse {
+    id: number;
     hoTen: string;
     email: string;
     soDienThoai: string | null;
     anhDaiDien: string | null;
+
     anhCCCDMatTruoc: string | null;
     anhCCCDMatSau: string | null;
     anhGiayPhepKinhDoanh: string | null;
     trangThaiXacMinh: string;
     lyDoTuChoiXacMinh: string | null;
+
+    vaiTro: string;
+    trangThaiUser: string;
+    ngayTao: string | null;
 }
 
 export interface NguoiDungRequest {
@@ -35,13 +41,7 @@ export interface CapNhatTrangThaiXacMinhRequest {
     lyDoTuChoiXacMinh?: string | null;
 }
 
-export interface NguoiDungQuanLy {
-    id: number;
-    hoTen: string;
-    email: string;
-    soDienThoai: string | null;
-    anhDaiDien: string | null;
-    vaiTro: string;
-    trangThaiUser: string;
-    ngayTao: string | null;
+
+export interface CapNhatTrangThaiUserRequest {
+    trangThaiUser: "DANG_HOAT_DONG" | "BI_KHOA" | "KHONG_HOAT_DONG" | "DA_XOA";
 }

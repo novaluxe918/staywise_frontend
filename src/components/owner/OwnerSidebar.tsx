@@ -1,18 +1,25 @@
+
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   BedDouble,
   CalendarCheck,
-  ConciergeBell,
   Star,
   Building2,
   CalendarDays,
-  LayoutGrid,
-  HandPlatter,
-  Home,
   ShieldCheck,
   ChevronRight,
 } from "lucide-react";
+
+import {
+  Box,
+  Typography,
+  Chip,
+  Stack,
+  Paper,
+} from "@mui/material";
+
+import logo from "../../assets/logo.png";
 
 const menus = [
   {
@@ -22,108 +29,301 @@ const menus = [
       { name: "Quản lý Phòng", path: "/quan-ly-phong", icon: BedDouble },
       { name: "Bảng giá & Mùa vụ", path: "/bang-gia", icon: CalendarDays },
       { name: "Quản lý Đặt phòng", path: "/quan-ly-dat-phong", icon: CalendarCheck },
-     
     ],
   },
   {
     title: "Khách hàng & Cơ sở",
     items: [
-      { name: "Tiện ích cơ sở", path: "/tien-ichcs", icon: LayoutGrid },
       { name: "Đánh giá từ khách", path: "/admin/danh-gia-tu-khach", icon: Star },
-      { name: "Hồ sơ Homestay", path: "/admin/ho-so-homestay", icon: Building2 },
+      { name: "Hồ sơ Homestay", path: "/ho-so", icon: Building2 },
     ],
   },
 ];
 
 export default function OwnerSidebar() {
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-slate-200/80 bg-white shadow-sm">
+    <Box
+      component="aside"
+      sx={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        zIndex: 1200,
+        width: 288,
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#FFFFFF",
+        borderRight: "1px solid #E2E8F0",
+        boxShadow: "2px 0 12px rgba(15, 23, 42, 0.03)",
+      }}
+    >
       {/* Brand Header */}
-      <div className="flex items-center gap-3.5 border-b border-slate-100 px-6 py-5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-700 to-teal-500 text-white shadow-md shadow-emerald-700/20">
-          <Home className="h-6 w-6 stroke-[2.2]" />
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg font-black tracking-tight text-slate-800">
-              STAY<span className="text-emerald-600">WISE</span>
-            </span>
-            <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              Host
-            </span>
-          </div>
-          <p className="text-xs text-slate-400">Hệ thống quản trị cơ sở lưu trú</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 1.5,
+          px: 3,
+          py: 2.5,
+          minHeight: 85,
+          borderBottom: "1px solid #F1F5F9",
+        }}
+      >
+        {/* Logo */}
+        <Box
+          sx={{
+            width: 48,
+            height: 48,
+            flexShrink: 0,
+            overflow: "hidden",
+            borderRadius: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Box
+            component="img"
+            src={logo}
+            alt="StayWise Logo"
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              imageRendering: "auto",
+              display: "block",
+            }}
+          />
+        </Box>
+
+        {/* Brand Name */}
+        <Box sx={{ minWidth: 0 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 0.8,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 19,
+                fontWeight: 900,
+                letterSpacing: "-0.6px",
+                color: "#1E293B",
+              }}
+            >
+              STAY
+              <Box component="span" sx={{ color: "#059669" }}>
+                WISE
+              </Box>
+            </Typography>
+
+            <Chip
+              label="HOST"
+              size="small"
+              sx={{
+                height: 19,
+                borderRadius: "5px",
+                bgcolor: "#ECFDF5",
+                color: "#047857",
+                fontSize: 9,
+                fontWeight: 800,
+                "& .MuiChip-label": {
+                  px: 0.8,
+                },
+              }}
+            />
+          </Box>
+
+          <Typography
+            sx={{
+              mt: 0.3,
+              fontSize: 10.5,
+              color: "#94A3B8",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Hệ thống quản trị cơ sở lưu trú
+          </Typography>
+        </Box>
+      </Box>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-5 scrollbar-thin scrollbar-thumb-slate-200">
+      <Box
+        component="nav"
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          px: 2,
+          py: 2.5,
+          "&::-webkit-scrollbar": {
+            width: 5,
+          },
+          "&::-webkit-scrollbar-thumb": {
+            bgcolor: "#E2E8F0",
+            borderRadius: 10,
+          },
+        }}
+      >
         {menus.map((menu) => (
-          <div key={menu.title}>
-            <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <Box key={menu.title} sx={{ mb: 3 }}>
+            <Typography
+              sx={{
+                px: 1.5,
+                mb: 1.2,
+                fontSize: 10.5,
+                fontWeight: 800,
+                color: "#94A3B8",
+                letterSpacing: "0.8px",
+                textTransform: "uppercase",
+              }}
+            >
               {menu.title}
-            </p>
+            </Typography>
 
-            <div className="space-y-1">
+            <Stack spacing={0.6}>
               {menu.items.map((item) => {
                 const Icon = item.icon;
 
                 return (
-                  <NavLink
+                  <Box
                     key={item.path}
+                    component={NavLink}
                     to={item.path}
-                    className={({ isActive }) =>
-                      `group relative flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${isActive
-                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <Icon
-                            size={19}
-                            className={`transition-colors duration-200 ${isActive
-                              ? "text-white"
-                              : "text-slate-400 group-hover:text-emerald-600"
-                              }`}
-                          />
-                          <span>{item.name}</span>
-                        </div>
+                    end={item.path === "/tong-quan"}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      px: 1.5,
+                      py: 1.35,
+                      borderRadius: "11px",
+                      textDecoration: "none",
+                      color: "#64748B",
+                      transition: "all 0.2s ease",
 
-                        {isActive ? (
-                          <ChevronRight size={16} className="text-emerald-200" />
-                        ) : null}
-                      </>
-                    )}
-                  </NavLink>
+                      "&:hover": {
+                        bgcolor: "#F8FAFC",
+                        color: "#0F172A",
+                      },
+
+                      "&.active": {
+                        bgcolor: "#059669",
+                        color: "#FFFFFF",
+                        boxShadow: "0 4px 10px rgba(5, 150, 105, 0.2)",
+                      },
+
+                      "&.active .menu-icon": {
+                        color: "#FFFFFF",
+                      },
+
+                      "&.active .menu-arrow": {
+                        color: "#A7F3D0",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Box
+                        className="menu-icon"
+                        sx={{
+                          display: "flex",
+                          color: "#94A3B8",
+                          transition: "color 0.2s",
+                        }}
+                      >
+                        <Icon size={19} strokeWidth={2} />
+                      </Box>
+
+                      <Typography
+                        sx={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {item.name}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      className="menu-arrow"
+                      sx={{
+                        display: "flex",
+                        color: "transparent",
+                      }}
+                    >
+                      <ChevronRight size={16} />
+                    </Box>
+                  </Box>
                 );
               })}
-            </div>
-          </div>
+            </Stack>
+          </Box>
         ))}
-      </nav>
+      </Box>
 
       {/* Property Status Card */}
-      <div className="border-t border-slate-100 p-4">
-        <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
-          <div className="relative flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
-          </div>
+      <Box sx={{ p: 2, borderTop: "1px solid #F1F5F9" }}>
+        <Paper
+          elevation={0}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            p: 1.5,
+            borderRadius: "12px",
+            border: "1px solid #E2E8F0",
+            bgcolor: "#F8FAFC",
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              width: 10,
+              height: 10,
+              flexShrink: 0,
+              borderRadius: "50%",
+              bgcolor: "#10B981",
+              boxShadow: "0 0 0 4px #D1FAE5",
+            }}
+          />
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs font-semibold text-slate-800">Đang hoạt động</p>
-              <ShieldCheck size={14} className="text-emerald-600" />
-            </div>
-            <p className="truncate text-[11px] text-slate-400">
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" sx={{ alignItems: "center" }} spacing={0.6}>
+              <Typography
+                sx={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: "#1E293B",
+                }}
+              >
+                Đang hoạt động
+              </Typography>
+
+              <ShieldCheck size={14} color="#059669" />
+            </Stack>
+
+            <Typography
+              sx={{
+                mt: 0.3,
+                fontSize: 10.5,
+                color: "#94A3B8",
+              }}
+            >
               Hệ thống đã xác thực an toàn
-            </p>
-          </div>
-        </div>
-      </div>
-    </aside>
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
   );
 }

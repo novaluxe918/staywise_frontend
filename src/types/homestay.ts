@@ -46,3 +46,9 @@ export interface AnhHomeStay {
   url: string;
 }
 
+
+export interface HomeStayOption {
+    id: number;
+    tenHomeStay: string;
+}
+

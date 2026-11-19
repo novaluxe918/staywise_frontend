@@ -5,6 +5,7 @@ import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material'
+import { HomeStayProvider } from './context/HomeStayContext.tsx'
 
 
 const theme = createTheme({
@@ -17,10 +18,11 @@ createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <ThemeProvider theme={theme}>
             <CssBaseline />
-
             <BrowserRouter>
                 <AuthProvider>
-                    <App />
+                    <HomeStayProvider>
+                        <App />
+                    </HomeStayProvider>
                 </AuthProvider>
             </BrowserRouter>
 

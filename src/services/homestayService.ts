@@ -1,4 +1,4 @@
-import type { HomeStay, TheLoaiHomeStayResponse } from "../types/homestay";
+import type { HomeStay, HomeStayOption, TheLoaiHomeStayResponse } from "../types/homestay";
 import api, { type PageResponse } from "./api";
 
 export const dangKyHomeStay = (formData: FormData) => {
@@ -30,14 +30,24 @@ export const getDanhSachHomeStay = async (tuKhoa: string,
     return response.data;
 };
 
-export const duyetHomeStay = async(id: number) => {
+export const duyetHomeStay = async (id: number) => {
     return await api.put(`/admin/duyet/${id}`);
 }
 
-export const tuChoiHomeStay = async(id: number,
+export const tuChoiHomeStay = async (id: number,
     lyDoTuChoi: string) => {
-          return await api.put(
+    return await api.put(
         `/admin/tuChoi/${id}`,
         { lyDoTuChoi }
     );
-    }
+}
+
+export const layDanhSachHomeStayDaDuyet =
+    async (): Promise<HomeStayOption[]> => {
+
+        const response = await api.get<HomeStayOption[]>(
+            "/homestay/da-duyet"
+        );
+
+        return response.data;
+    };

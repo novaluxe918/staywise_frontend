@@ -1,9 +1,9 @@
 
 
-import type { CapNhatTrangThaiXacMinhRequest, NguoiDungQuanLy, NguoiDungRequest, NguoiDungResponse, NguoiDungSearchParams, OwnerRow } from "../types/nguoiDung";
+import type { CapNhatTrangThaiUserRequest, CapNhatTrangThaiXacMinhRequest, NguoiDungQuanLy, NguoiDungRequest, NguoiDungResponse, NguoiDungSearchParams, OwnerRow } from "../types/nguoiDung";
 import api, { type PageParams, type PageResponse } from "./api";
 
-// Lấy thông tin
+
 export const layThongTinNguoiDung = async () => {
     const response = await api.get<NguoiDungResponse>(
         "/nguoidung/thong-tin"
@@ -94,3 +94,15 @@ export const getThongTinNguoiDung = async(params: NguoiDungSearchParams): Promis
 
      return response.data;
 }
+
+export const capNhatTrangThaiUser = async (
+    id: number,
+    data: CapNhatTrangThaiUserRequest
+) => {
+    const response = await api.put(
+        `/nguoidung/trang-thai/${id}`,
+        data
+    );
+
+    return response.data;
+};

@@ -1,22 +1,31 @@
 import { Box, Stack, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import TableUser from './TableUser';
 import type { NguoiDung } from '../../../context/AuthContext';
 import type { PageResponse } from '../../../services/api';
-import { getThongTinNguoiDung } from '../../../services/nguoiDungService';
-import type { NguoiDungQuanLy } from '../../../types/nguoiDung';
+import { capNhatTrangThaiUser, getThongTinNguoiDung } from '../../../services/nguoiDungService';
+import type { NguoiDungResponse } from '../../../types/nguoiDung';
+import ModalXemChiTiet from './ModalXemChiTiet';
+import { toast } from '../../../utils/toast';
+import ModalXacNhanTrangThai from './ModalXacNhanTrangThai';
 
 function QuanLyUser() {
-      
-    const [nguoiDungs, setNguoiDungs] = useState<NguoiDungQuanLy[]>([]);
+    const [openDetail, setOpenDetail] = useState(false);
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState(false);
+
+    const [selectedUser, setSelectedUser] =
+        useState<NguoiDungResponse | null>(null);
+
+    const [nguoiDungs, setNguoiDungs] =
+        useState<NguoiDungResponse[]>([]);
+
     const [loading, setLoading] = useState(false);
 
-    // Bộ lọc
     const [tuKhoa, setTuKhoa] = useState("");
     const [vaiTro, setVaiTro] = useState("");
     const [trangThai, setTrangThai] = useState("");
     const [tuKhoaDebounce, setTuKhoaDebounce] = useState("");
-
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -24,50 +33,42 @@ function QuanLyUser() {
 
     // Debounce tìm kiếm 400ms
     useEffect(() => {
-
         const timer = setTimeout(() => {
             setTuKhoaDebounce(tuKhoa);
         }, 400);
 
         return () => clearTimeout(timer);
-
     }, [tuKhoa]);
 
 
-    useEffect(() => {
+    const fetchNguoiDung = useCallback(async () => {
+        try {
+            setLoading(true);
 
-        const fetchNguoiDung = async () => {
+            const data: PageResponse<NguoiDungResponse> =
+                await getThongTinNguoiDung({
+                    tuKhoa: tuKhoaDebounce,
+                    vaiTro,
+                    trangThai,
+                    trang: page,
+                    kichThuoc: rowsPerPage
+                });
 
-            try {
+            setNguoiDungs(data.content);
+            setTotalElements(data.page.totalElements);
 
-                setLoading(true);
-
-                const data: PageResponse<NguoiDungQuanLy> =
-                    await getThongTinNguoiDung({
-                        tuKhoa: tuKhoaDebounce,
-                        vaiTro,
-                        trangThai,
-                        trang: page,
-                        kichThuoc: rowsPerPage
-                    });
-
-                setNguoiDungs(data.content);
-                setTotalElements(data.page.totalElements);
-
-            } catch (error) {
-
-                console.error("Lỗi lấy danh sách người dùng:", error);
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        };
-
-        fetchNguoiDung();
-
+        } catch (error) {
+            console.error("Lỗi lấy danh sách người dùng:", error);
+            toast.error("Không thể tải danh sách người dùng");
+        } finally {
+            setLoading(false);
+        }
     }, [tuKhoaDebounce, vaiTro, trangThai, page, rowsPerPage]);
+
+    // Tự động lấy danh sách khi tìm kiếm, lọc hoặc chuyển trang
+    useEffect(() => {
+        fetchNguoiDung();
+    }, [fetchNguoiDung]);
 
     // Tìm kiếm
     const handleSearchChange = (value: string) => {
@@ -97,8 +98,57 @@ function QuanLyUser() {
         setRowsPerPage(value);
         setPage(0);
     };
+
+   
+    const handleXemChiTiet = (user: NguoiDungResponse) => {
+        setSelectedUser(user);
+        setOpenDetail(true);
+    };
+
+    
+    const handleOpenConfirm = (user: NguoiDungResponse) => {
+        setSelectedUser(user);
+        setOpenConfirm(true);
+    };
+
+    const handleConfirmStatus = async () => {
+        if (!selectedUser) return;
+
+        const isLocked =
+            selectedUser.trangThaiUser === "BI_KHOA";
+
+        const trangThaiMoi = isLocked
+            ? "DANG_HOAT_DONG"
+            : "BI_KHOA";
+
+        try {
+            setLoadingStatus(true);
+
+            await capNhatTrangThaiUser(selectedUser.id, {
+                trangThaiUser: trangThaiMoi
+            });
+
+            setOpenConfirm(false);
+            setSelectedUser(null);
+
+            toast.success(
+                isLocked
+                    ? "Mở khóa tài khoản thành công"
+                    : "Khóa tài khoản thành công"
+            );
+
+            // Tải lại danh sách sau khi cập nhật
+            await fetchNguoiDung();
+
+        } catch (error) {
+            console.error("Lỗi cập nhật trạng thái:", error);
+            toast.error("Cập nhật trạng thái tài khoản thất bại");
+        } finally {
+            setLoadingStatus(false);
+        }
+    };
     return (
-         <div className="p-6 bg-slate-50/50 min-h-screen">
+        <div className="p-6 bg-slate-50/50 min-h-screen">
 
             <Stack
                 direction="row"
@@ -132,8 +182,8 @@ function QuanLyUser() {
                 </Box>
 
             </Stack>
-            <TableUser   
-            nguoiDungs={nguoiDungs}
+            <TableUser
+                nguoiDungs={nguoiDungs}
                 loading={loading}
                 tuKhoa={tuKhoa}
                 vaiTro={vaiTro}
@@ -145,7 +195,14 @@ function QuanLyUser() {
                 onVaiTroChange={handleVaiTroChange}
                 onTrangThaiChange={handleTrangThaiChange}
                 onPageChange={handlePageChange}
-                onRowsPerPageChange={handleRowsPerPageChange}  />
+                onRowsPerPageChange={handleRowsPerPageChange} handleXemChiTiet={handleXemChiTiet} handleOpenConfirm={handleOpenConfirm} />
+
+            <ModalXemChiTiet user={selectedUser} open={openDetail} onClose={() => setOpenDetail(false)} />
+
+            <ModalXacNhanTrangThai open={openConfirm} onClose={() => setOpenConfirm(false)} onConfirm={handleConfirmStatus}
+                isLocked={selectedUser?.trangThaiUser === "BI_KHOA"}
+                userName={selectedUser?.hoTen ?? ""}
+                loading={loadingStatus} />
 
         </div>
     );
