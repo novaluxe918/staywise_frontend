@@ -35,6 +35,10 @@ export interface HomeStay {
   soDienThoai: string;
   email: string;
   trangThaiHomeStay: string;
+      ngayDangKy?: string;
+       danhSachTienIchHS: number[];
+    danhSachDichVuHS: number[];
+      theLoaiHomeStay: string;
   tienIchHienThi: string[];
   dichVuHienThi: string[];
   danhSachHinhAnh: HinhAnhHomeStay[];

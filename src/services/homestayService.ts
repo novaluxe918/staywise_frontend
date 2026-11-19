@@ -51,3 +51,10 @@ export const layDanhSachHomeStayDaDuyet =
 
         return response.data;
     };
+
+export const layThongTinHomeStay = async(id: number): Promise<HomeStay>  => {
+   
+    const response = await api.get<HomeStay>(`homestay/${id}`);
+
+    return response.data;
+}

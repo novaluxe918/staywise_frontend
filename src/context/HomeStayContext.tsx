@@ -40,10 +40,9 @@ export const HomeStayProvider = ({ children }: Props) => {
             setDangTaiHomeStay(true);
 
             const data = await layDanhSachHomeStayDaDuyet();
-
+    
             setDanhSachHomeStay(data);
 
-            // Giữ cơ sở đang chọn nếu vẫn còn trong danh sách được duyệt
             setHomeStayDangChon((current) => {
                 const conHopLe = data.some(
                     (item) => item.id === current
