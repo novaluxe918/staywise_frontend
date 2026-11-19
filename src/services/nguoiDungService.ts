@@ -1,6 +1,6 @@
 
 
-import type { CapNhatTrangThaiUserRequest, CapNhatTrangThaiXacMinhRequest, NguoiDungQuanLy, NguoiDungRequest, NguoiDungResponse, NguoiDungSearchParams, OwnerRow } from "../types/nguoiDung";
+import type { CapNhatTrangThaiUserRequest, CapNhatTrangThaiXacMinhRequest, NguoiDungRequest, NguoiDungResponse, NguoiDungSearchParams, OwnerRow } from "../types/nguoiDung";
 import api, { type PageParams, type PageResponse } from "./api";
 
 
@@ -89,7 +89,7 @@ export const getThongTinHoSo = async () => {
     return response.data;
 };
 
-export const getThongTinNguoiDung = async(params: NguoiDungSearchParams): Promise<PageResponse<NguoiDungQuanLy>> => {
+export const getThongTinNguoiDung = async(params: NguoiDungSearchParams): Promise<PageResponse<NguoiDungResponse>> => {
      const response = await api.get("nguoidung/show-all", {params})
 
      return response.data;

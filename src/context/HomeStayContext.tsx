@@ -6,10 +6,10 @@ import {
     useState,
     type ReactNode,
 } from "react";
+
 import type { HomeStayOption } from "../types/homestay";
 import { layDanhSachHomeStayDaDuyet } from "../services/homestayService";
-
-
+import { useAuth } from "./AuthContext"; // Sửa đường dẫn nếu cần
 
 interface HomeStayContextType {
     danhSachHomeStay: HomeStayOption[];
@@ -29,18 +29,23 @@ interface Props {
 
 export const HomeStayProvider = ({ children }: Props) => {
 
-    const [danhSachHomeStay, setDanhSachHomeStay] = useState<HomeStayOption[]>([]);
+    const { nguoiDung } = useAuth();
 
-    const [homeStayDangChon, setHomeStayDangChon] = useState<number | "">("");
+    const [danhSachHomeStay, setDanhSachHomeStay] =
+        useState<HomeStayOption[]>([]);
+
+    const [homeStayDangChon, setHomeStayDangChon] =
+        useState<number | "">("");
 
     const [dangTaiHomeStay, setDangTaiHomeStay] = useState(false);
 
+    // Tải danh sách HomeStay
     const taiLaiDanhSachHomeStay = async () => {
         try {
             setDangTaiHomeStay(true);
 
             const data = await layDanhSachHomeStayDaDuyet();
-    
+
             setDanhSachHomeStay(data);
 
             setHomeStayDangChon((current) => {
@@ -62,9 +67,59 @@ export const HomeStayProvider = ({ children }: Props) => {
         }
     };
 
+
     useEffect(() => {
-        taiLaiDanhSachHomeStay();
-    }, []);
+        let isMounted = true;
+
+        const taiDanhSach = async () => {
+
+        
+            if (!nguoiDung?.id) {
+                setDanhSachHomeStay([]);
+                setHomeStayDangChon("");
+                setDangTaiHomeStay(false);
+                return;
+            }
+
+            try {
+                setDangTaiHomeStay(true);
+
+              
+                setDanhSachHomeStay([]);
+                setHomeStayDangChon("");
+
+                const data = await layDanhSachHomeStayDaDuyet();
+
+                if (!isMounted) return;
+
+                setDanhSachHomeStay(data);
+
+                setHomeStayDangChon(
+                    data.length > 0 ? data[0].id : ""
+                );
+
+            } catch (error) {
+                if (!isMounted) return;
+
+                console.error("Lỗi lấy danh sách HomeStay:", error);
+
+                setDanhSachHomeStay([]);
+                setHomeStayDangChon("");
+
+            } finally {
+                if (isMounted) {
+                    setDangTaiHomeStay(false);
+                }
+            }
+        };
+
+        taiDanhSach();
+
+        return () => {
+            isMounted = false;
+        };
+
+    }, [nguoiDung?.id]);
 
     return (
         <HomeStayContext.Provider

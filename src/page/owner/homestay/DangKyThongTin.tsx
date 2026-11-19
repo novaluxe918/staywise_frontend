@@ -276,8 +276,6 @@ export default function DangKyThongTin() {
 
 
 
-
-
   const xuLyGuiForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -325,12 +323,6 @@ export default function DangKyThongTin() {
         data.append("danhSachDichVuHS", String(id));
       });
 
-      // KIỂM TRA DỮ LIỆU TRƯỚC KHI GỬI
-      console.log("========== DỮ LIỆU ĐĂNG KÝ ==========");
-      data.forEach((value, key) => {
-        console.log(key, value);
-      });
-      console.log("====================================");
 
       const response = await dangKyHomeStay(data);
 
@@ -354,13 +346,6 @@ export default function DangKyThongTin() {
       setDichVuDaChon([]);
 
     } catch (error: any) {
-      console.error("LỖI ĐĂNG KÝ HOMESTAY:", error);
-
-      console.log("Error message:", error.message);
-      console.log("Error code:", error.code);
-      console.log("Error response:", error.response);
-      console.log("Error request:", error.request);
-
       const message =
         typeof error.response?.data === "string"
           ? error.response.data

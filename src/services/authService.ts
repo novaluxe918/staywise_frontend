@@ -10,8 +10,19 @@ export async function dangKy(data: DangKyDTO){
 export const dangNhap = async (
     data: DangNhapRequest
 ): Promise<DangNhapResponse> => {
-    const response = await api.post<DangNhapResponse>("/auth/dangNhap", data);
-    return response.data;
+    try {
+        const response = await api.post<DangNhapResponse>(
+            "/auth/dangNhap",
+            data
+        );
+
+        return response.data;
+
+    } catch (error: any) {
+
+
+        throw error;
+    }
 };
 
 export const dangXuat = async () => {

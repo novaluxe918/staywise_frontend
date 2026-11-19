@@ -6,9 +6,9 @@ export interface TheLoaiHomeStayResponse {
 }
 
 export interface HinhAnhHomeStay {
-    id: number;
-    duongDan: string;
-    laAnhDaiDien: boolean
+  id: number;
+  duongDan: string;
+  laAnhDaiDien: boolean
 }
 
 export interface HomeStayRequest {
@@ -28,6 +28,7 @@ export interface HomeStay {
   id: number;
   tenHomeStay: string;
   tenChuHomeStay: string;
+  tenTheLoaiHomeStay: string | null;
   moTa: string;
   phuongXa: string;
   tinhThanh: string;
@@ -35,10 +36,10 @@ export interface HomeStay {
   soDienThoai: string;
   email: string;
   trangThaiHomeStay: string;
-      ngayDangKy?: string;
-       danhSachTienIchHS: number[];
-    danhSachDichVuHS: number[];
-      theLoaiHomeStay: string;
+  ngayDangKy?: string;
+  danhSachTienIchHS: number[];
+  danhSachDichVuHS: number[];
+  theLoaiHomeStay: string;
   tienIchHienThi: string[];
   dichVuHienThi: string[];
   danhSachHinhAnh: HinhAnhHomeStay[];
@@ -52,7 +53,7 @@ export interface AnhHomeStay {
 
 
 export interface HomeStayOption {
-    id: number;
-    tenHomeStay: string;
+  id: number;
+  tenHomeStay: string;
 }
 
