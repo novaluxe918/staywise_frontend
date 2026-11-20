@@ -150,3 +150,45 @@ export const layDanhSachCuocTroChuyen = (
         callback(danhSach);
     });
 };
+
+
+// 6. ADMIN trả lời OWNER
+export const guiTinNhanAdmin = async (
+    ownerUid: string,
+    noiDung: string
+) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("ADMIN chưa đăng nhập Firebase!");
+    }
+
+    // Kiểm tra quyền ADMIN
+    const idToken = await user.getIdTokenResult();
+    const vaiTro = idToken.claims.role;
+
+    if (vaiTro !== "ADMIN") {
+        throw new Error("Bạn không có quyền trả lời!");
+    }
+
+    const noiDungHopLe = noiDung.trim();
+
+    if (!noiDungHopLe) {
+        throw new Error("Tin nhắn không được để trống!");
+    }
+
+    // Gửi vào cuộc trò chuyện của OWNER được chọn
+    const messagesRef = collection(
+        db,
+        "conversations",
+        ownerUid,
+        "messages"
+    );
+
+    await addDoc(messagesRef, {
+        senderId: user.uid,
+        senderRole: "ADMIN",
+        content: noiDungHopLe,
+        createdAt: serverTimestamp()
+    });
+};

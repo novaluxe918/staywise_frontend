@@ -9,6 +9,7 @@ import {
   CalendarDays,
   ShieldCheck,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 
 import {
@@ -36,6 +37,11 @@ const menus = [
     items: [
       { name: "Đánh giá từ khách", path: "/admin/danh-gia-tu-khach", icon: Star },
       { name: "Hồ sơ Homestay", path: "/ho-so", icon: Building2 },
+      {
+        name: "Đề xuất tiện ích / dịch vụ",
+        path: "/de-xuat",
+        icon: MessageCircle,
+      },
     ],
   },
 ];

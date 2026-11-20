@@ -21,6 +21,8 @@ import QuanLyOwner from "../page/admin/homestayowner/QuanLyOwner";
 import QuanLyHomeStay from "../page/admin/homestay/QuanLyHomeStay";
 import QuanLyUser from "../page/admin/user/QuanLyUser";
 import HoSo from "../page/owner/homestay/HoSo";
+import ChatDeXuat from "../page/owner/dexuat/ChatDeXuat";
+import QuanLyDeXuat from "../page/admin/dexuat/QuanLyDeXuat";
 
 
 
@@ -52,6 +54,7 @@ function AppRoutes() {
         <Route path="homestays" element={<QuanLyHomeStay />} />
 
         <Route path="users" element={<QuanLyUser />} />
+        <Route path="de-xuat" element={<QuanLyDeXuat />} />
       </Route>
 
       {/* Giao diện quản lý OWNER */}
@@ -59,6 +62,7 @@ function AppRoutes() {
         <Route path="/tong-quan" element={<Dasboard />} />
         <Route path="/quan-ly-phong" element={<QuanLyPhong />} />
         <Route path="/ho-so" element={<HoSo />} />
+         <Route path="/de-xuat" element={<ChatDeXuat />} />
       </Route>
 
       {/* Đăng ký thông tin HomeStay */}

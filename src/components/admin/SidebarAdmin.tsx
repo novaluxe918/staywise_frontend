@@ -16,7 +16,7 @@ import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import VerifiedUserRoundedIcon from '@mui/icons-material/VerifiedUserRounded';
 import HomeWorkRoundedIcon from '@mui/icons-material/HomeWorkRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
-import { ConciergeBell, HandPlatter, LifeBuoy } from 'lucide-react';
+import { ConciergeBell, HandPlatter, LifeBuoy, MessageCircle } from 'lucide-react';
 import logo from "../../assets/logo.png";
 
 export const DRAWER_WIDTH = 260;
@@ -65,7 +65,12 @@ const menuItems = [
         path: '/admin/danh-gia',
         text: 'Quản lý Đánh giá',
         icon: <RateReviewRoundedIcon fontSize="small" />
-    }
+    },
+    {
+        path: '/admin/de-xuat',
+        text: 'Quản lý đề xuất',
+        icon: <MessageCircle size={18} />,
+    },
 ];
 
 function SidebarAdmin() {
