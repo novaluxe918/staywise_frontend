@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   ChevronRight,
   MessageCircle,
+  BedIcon,
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ const menus = [
       { name: "Quản lý Phòng", path: "/quan-ly-phong", icon: BedDouble },
       { name: "Bảng giá & Mùa vụ", path: "/bang-gia", icon: CalendarDays },
       { name: "Quản lý Đặt phòng", path: "/quan-ly-dat-phong", icon: CalendarCheck },
+      { name: "Quản lý Giường", path: "/giuong", icon: BedIcon },
     ],
   },
   {

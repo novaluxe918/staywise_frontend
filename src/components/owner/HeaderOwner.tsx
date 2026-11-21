@@ -141,7 +141,7 @@ export default function HeaderOwner() {
         borderBottom: "1px solid",
         borderColor: "divider",
         color: "text.primary",
-        zIndex: (theme) => theme.zIndex.appBar,
+        zIndex: 900,
       }}
     >
       <Toolbar

@@ -23,6 +23,7 @@ import QuanLyUser from "../page/admin/user/QuanLyUser";
 import HoSo from "../page/owner/homestay/HoSo";
 import ChatDeXuat from "../page/owner/dexuat/ChatDeXuat";
 import QuanLyDeXuat from "../page/admin/dexuat/QuanLyDeXuat";
+import QuanLyGiuong from "../page/owner/giuong/QuanLyGiuong";
 
 
 
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/quan-ly-phong" element={<QuanLyPhong />} />
         <Route path="/ho-so" element={<HoSo />} />
          <Route path="/de-xuat" element={<ChatDeXuat />} />
+         <Route path="/giuong" element={<QuanLyGiuong />} />
       </Route>
 
       {/* Đăng ký thông tin HomeStay */}
