@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from "react";
 
-import React, { useState } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -22,81 +22,191 @@ import MeetingRoomOutlinedIcon from "@mui/icons-material/MeetingRoomOutlined";
 import KingBedOutlinedIcon from "@mui/icons-material/KingBedOutlined";
 import SquareFootOutlinedIcon from "@mui/icons-material/SquareFootOutlined";
 
+import {
+    danhSachLoaiPhong,
+    danhSachTheLoaiNguoi,
+    type LoaiPhong,
+    type PhongRequest,
+    type SoNguoiRequest,
+} from "../../../types/phong";
+
+import type { LoaiGiuong } from "../../../types/giuong";
+
+import { showAllGiuong } from "../../../services/giuongService";
+import { savePhong } from "../../../services/phongService";
+import { useForm } from "react-hook-form";
+import { phongSchema, type PhongFormData } from "../../../schemas/phongSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "../../../utils/toast";
+
 interface Props {
     open: boolean;
     onClose: () => void;
+    maHomeStay: number;
+    onSuccess?: () => void;
 }
 
-const danhSachLoaiPhong = [
-    { value: "DON", label: "Phòng đơn", description: "Phù hợp 1 - 2 khách", icon: "🛏️" },
-    { value: "DOI", label: "Phòng đôi", description: "Phù hợp 2 khách", icon: "🛌" },
-    { value: "GIA_DINH", label: "Phòng gia đình", description: "Phù hợp gia đình", icon: "🏡" },
-    { value: "VIP", label: "Phòng VIP", description: "Không gian cao cấp", icon: "✨" },
-];
+function ModalThemPhong({
+    open,
+    onClose,
+    maHomeStay,
+    onSuccess,
+}: Props) {
 
-const danhSachGiuong = [
-    { id: 1, ten: "Giường đơn", kichThuoc: "1m x 2m" },
-    { id: 2, ten: "Giường đôi", kichThuoc: "1m6 x 2m" },
-    { id: 3, ten: "Giường Queen", kichThuoc: "1m8 x 2m" },
-    { id: 4, ten: "Giường King", kichThuoc: "2m x 2m" },
-];
-
-function ModalThemPhong({ open, onClose }: Props) {
-
-    const [formData, setFormData] = useState({
-        tenPhong: "",
-        loaiPhong: "",
-        dienTich: "",
-        moTa: "",
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        reset,
+        formState: { errors },
+    } = useForm<PhongFormData>({
+        resolver: zodResolver(phongSchema),
+        defaultValues: {
+            tenPhong: "",
+            loaiPhong: "",
+            dienTich: "",
+            moTa: "",
+            giuongDaChon: [],
+            danhSachSoNguoi: danhSachTheLoaiNguoi.map(item => ({
+                theLoaiNguoi: item.value,
+                soLuong: item.value === "NGUOI_LON" ? 1 : 0,
+            })),
+        },
     });
+    const [danhSachGiuong, setDanhSachGiuong] = useState<LoaiGiuong[]>([]);
+    const [loadingGiuong, setLoadingGiuong] = useState(false);
 
-    const [giuongDaChon, setGiuongDaChon] = useState<
-        { maLoaiGiuong: number; soLuong: number }[]
-    >([]);
+    const giuongDaChon = watch("giuongDaChon");
+    const danhSachSoNguoi = watch("danhSachSoNguoi");
+    const loaiPhongDaChon = watch("loaiPhong");
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const { name, value } = e.target;
+    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        if (!open) return;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
+        const layDanhSachGiuong = async () => {
+            setLoadingGiuong(true);
+
+            try {
+                const response = await showAllGiuong("", 0, 100);
+                const duLieu = response as unknown as {
+                    content?: LoaiGiuong[];
+                    page?: { content?: LoaiGiuong[] };
+                };
+
+                setDanhSachGiuong(
+                    duLieu.content ?? duLieu.page?.content ?? []
+                );
+            } catch (error) {
+                console.error("Lỗi lấy danh sách giường:", error);
+                window.alert("Không thể tải danh sách loại giường!");
+            } finally {
+                setLoadingGiuong(false);
+            }
+        };
+
+        layDanhSachGiuong();
+    }, [open]);
+
+
+
 
     const handleChonGiuong = (id: number) => {
-        setGiuongDaChon(prev => {
-            const tonTai = prev.find(item => item.maLoaiGiuong === id);
+        const danhSach = watch("giuongDaChon");
 
-            if (tonTai) {
-                return prev.filter(item => item.maLoaiGiuong !== id);
-            }
+        const tonTai = danhSach.some(
+            item => item.maLoaiGiuong === id
+        );
 
-            return [...prev, { maLoaiGiuong: id, soLuong: 1 }];
+        const ketQua = tonTai
+            ? danhSach.filter(item => item.maLoaiGiuong !== id)
+            : [...danhSach, { maLoaiGiuong: id, soLuong: 1 }];
+
+        setValue("giuongDaChon", ketQua, {
+            shouldValidate: true,
         });
     };
 
     const handleSoLuong = (id: number, soLuong: number) => {
-        setGiuongDaChon(prev =>
-            prev.map(item =>
+        setValue(
+            "giuongDaChon",
+            giuongDaChon.map(item =>
                 item.maLoaiGiuong === id
                     ? { ...item, soLuong }
                     : item
-            )
+            ),
+            { shouldValidate: true }
         );
     };
 
-    const handleSubmit = () => {
-        const duLieu = {
-            ...formData,
-            dienTich: Number(formData.dienTich),
-            danhSachGiuong: giuongDaChon,
-        };
-
-        console.log(duLieu);
+    const handleSoLuongNguoi = (
+        loaiNguoi: SoNguoiRequest["theLoaiNguoi"],
+        soLuong: number
+    ) => {
+        setValue(
+            "danhSachSoNguoi",
+            danhSachSoNguoi.map(item =>
+                item.theLoaiNguoi === loaiNguoi
+                    ? { ...item, soLuong }
+                    : item
+            ),
+            { shouldValidate: true }
+        );
     };
 
+
+
+   const onSubmit = async (data: PhongFormData) => {
+    if (!maHomeStay) {
+        toast.error("Không xác định được HomeStay!");
+        return;
+    }
+
+    const duLieu: PhongRequest = {
+        maHomeStay,
+        tenPhong: data.tenPhong,
+        loaiPhong: data.loaiPhong as LoaiPhong,
+        dienTich: Number(data.dienTich),
+        moTa: data.moTa,
+        danhSachGiuong: data.giuongDaChon,
+        danhSachSoNguoi: data.danhSachSoNguoi.filter(
+            item => item.soLuong > 0
+        ),
+    };
+
+    try {
+        setLoading(true);
+
+        await savePhong(duLieu);
+
+        toast.success("Thêm phòng thành công!");
+
+        reset();
+        onClose();
+        onSuccess?.();
+
+    } catch (error: any) {
+    console.error("Lỗi thêm phòng:", error);
+
+    console.log("HTTP Status:", error.response?.status);
+    console.log("Backend trả về:", error.response?.data);
+
+    const message =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Thêm phòng thất bại!";
+
+    toast.error(
+        typeof message === "string"
+            ? message
+            : JSON.stringify(message)
+    );
+
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <Dialog
             open={open}
@@ -120,7 +230,11 @@ function ModalThemPhong({ open, onClose }: Props) {
                     py: 2.5,
                 }}
             >
-                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ alignItems: "center" }}
+                >
                     <Box
                         sx={{
                             width: 48,
@@ -139,7 +253,11 @@ function ModalThemPhong({ open, onClose }: Props) {
                     <Box sx={{ flex: 1 }}>
                         <Typography
                             component="h2"
-                            sx={{ fontSize: 20, fontWeight: 700, color: "#185C35" }}
+                            sx={{
+                                fontSize: 20,
+                                fontWeight: 700,
+                                color: "#185C35",
+                            }}
                         >
                             Thêm phòng mới
                         </Typography>
@@ -168,23 +286,29 @@ function ModalThemPhong({ open, onClose }: Props) {
                             component="div"
                             sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
                         >
-                            Tên phòng <Typography component="span" color="error">*</Typography>
+                            Tên phòng{" "}
+                            <Typography component="span" color="error">
+                                *
+                            </Typography>
                         </Typography>
 
                         <TextField
+                            {...register("tenPhong")}
                             fullWidth
                             size="small"
-                            name="tenPhong"
                             placeholder="Ví dụ: Phòng Deluxe 01"
-                            value={formData.tenPhong}
-                            onChange={handleChange}
+                            error={!!errors.tenPhong}
+                            helperText={errors.tenPhong?.message}
                         />
                     </Box>
 
                     {/* LOẠI PHÒNG */}
                     <Box>
                         <Box sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>
-                            Loại phòng <Typography component="span" color="error">*</Typography>
+                            Loại phòng{" "}
+                            <Typography component="span" color="error">
+                                *
+                            </Typography>
                         </Box>
 
                         <Box
@@ -194,18 +318,18 @@ function ModalThemPhong({ open, onClose }: Props) {
                                 gap: 1.5,
                             }}
                         >
-                            {danhSachLoaiPhong.map((loai) => {
-                                const selected = formData.loaiPhong === loai.value;
+                            {danhSachLoaiPhong.map(loai => {
+                                const selected = loaiPhongDaChon === loai.value;
+
 
                                 return (
                                     <Paper
                                         key={loai.value}
                                         variant="outlined"
                                         onClick={() =>
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                loaiPhong: loai.value,
-                                            }))
+                                            setValue("loaiPhong", loai.value, {
+                                                shouldValidate: true,
+                                            })
                                         }
                                         sx={{
                                             p: 1.5,
@@ -214,7 +338,9 @@ function ModalThemPhong({ open, onClose }: Props) {
                                             border: selected
                                                 ? "2px solid #299653"
                                                 : "1px solid #E0E8E2",
-                                            bgcolor: selected ? "#F0FAF3" : "#fff",
+                                            bgcolor: selected
+                                                ? "#F0FAF3"
+                                                : "#fff",
                                             transition: "0.2s",
                                             "&:hover": {
                                                 borderColor: "#299653",
@@ -222,11 +348,13 @@ function ModalThemPhong({ open, onClose }: Props) {
                                             },
                                         }}
                                     >
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <Typography sx={{ fontSize: 23 }}>
-                                                {loai.icon}
-                                            </Typography>
-
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                            }}
+                                        >
                                             <Box sx={{ flex: 1 }}>
                                                 <Typography
                                                     sx={{
@@ -266,6 +394,17 @@ function ModalThemPhong({ open, onClose }: Props) {
                                                 </Box>
                                             )}
                                         </Box>
+                                        {errors.loaiPhong && (
+                                            <Typography
+                                                sx={{
+                                                    color: "error.main",
+                                                    fontSize: 12,
+                                                    mt: 1,
+                                                }}
+                                            >
+                                                {errors.loaiPhong.message}
+                                            </Typography>
+                                        )}
                                     </Paper>
                                 );
                             })}
@@ -274,7 +413,11 @@ function ModalThemPhong({ open, onClose }: Props) {
 
                     {/* CHỌN GIƯỜNG */}
                     <Box>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1.5 }}>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ alignItems: "center", mb: 1.5 }}
+                        >
                             <KingBedOutlinedIcon sx={{ color: "#299653" }} />
 
                             <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
@@ -282,91 +425,159 @@ function ModalThemPhong({ open, onClose }: Props) {
                             </Typography>
                         </Stack>
 
-                        <Stack spacing={1.2}>
-                            {danhSachGiuong.map((giuong) => {
-                                const selected = giuongDaChon.find(
-                                    item => item.maLoaiGiuong === giuong.id
-                                );
+                        {loadingGiuong ? (
+                            <Typography color="text.secondary">
+                                Đang tải danh sách giường...
+                            </Typography>
+                        ) : danhSachGiuong.length === 0 ? (
+                            <Typography color="text.secondary">
+                                Chưa có loại giường nào. Vui lòng thêm loại giường trước.
+                            </Typography>
+                        ) : (
+                            <Stack spacing={1.2}>
+                                {danhSachGiuong.map(giuong => {
+                                    const selected = giuongDaChon.find(
+                                        item => item.maLoaiGiuong === giuong.id
+                                    );
 
-                                return (
-                                    <Paper
-                                        key={giuong.id}
-                                        variant="outlined"
-                                        sx={{
-                                            p: 1.2,
-                                            borderRadius: 2,
-                                            borderColor: selected ? "#299653" : "#E0E8E2",
-                                            bgcolor: selected ? "#F3FAF5" : "#fff",
-                                        }}
-                                    >
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            sx={{ alignItems: "center" }}
+                                    return (
+                                        <Paper
+                                            key={giuong.id}
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.2,
+                                                borderRadius: 2,
+                                                borderColor: selected
+                                                    ? "#299653"
+                                                    : "#E0E8E2",
+                                                bgcolor: selected
+                                                    ? "#F3FAF5"
+                                                    : "#fff",
+                                            }}
                                         >
-                                            <Checkbox
-                                                checked={!!selected}
-                                                onChange={() => handleChonGiuong(giuong.id)}
-                                                sx={{
-                                                    color: "#A5B8AA",
-                                                    "&.Mui-checked": {
-                                                        color: "#299653",
-                                                    },
-                                                }}
-                                            />
-
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography sx={{ fontWeight: 600, fontSize: 13 }}>
-                                                    {giuong.ten}
-                                                </Typography>
-
-                                                <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
-                                                    {giuong.kichThuoc}
-                                                </Typography>
-                                            </Box>
-
-                                            {selected && (
-                                                <TextField
-                                                    size="small"
-                                                    type="number"
-                                                    label="Số lượng"
-                                                    value={selected.soLuong}
-                                                    onChange={e =>
-                                                        handleSoLuong(
-                                                            giuong.id,
-                                                            Math.max(1, Number(e.target.value))
-                                                        )
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                sx={{ alignItems: "center" }}
+                                            >
+                                                <Checkbox
+                                                    checked={!!selected}
+                                                    onChange={() =>
+                                                        handleChonGiuong(giuong.id)
                                                     }
-                                                    slotProps={{
-                                                        htmlInput: {
-                                                            min: 1,
-                                                            max: 20,
+                                                    sx={{
+                                                        color: "#A5B8AA",
+                                                        "&.Mui-checked": {
+                                                            color: "#299653",
                                                         },
                                                     }}
-                                                    sx={{ width: 105 }}
                                                 />
-                                            )}
-                                        </Stack>
-                                    </Paper>
+
+                                                <Box sx={{ flex: 1 }}>
+                                                    <Typography
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            fontSize: 13,
+                                                        }}
+                                                    >
+                                                        {giuong.tenGiuong}
+                                                    </Typography>
+                                                </Box>
+
+                                                {selected && (
+                                                    <TextField
+                                                        size="small"
+                                                        type="number"
+                                                        label="Số lượng"
+                                                        value={selected.soLuong}
+                                                        onChange={e =>
+                                                            handleSoLuong(
+                                                                giuong.id,
+                                                                Math.max(
+                                                                    1,
+                                                                    Math.min(
+                                                                        20,
+                                                                        Number(e.target.value)
+                                                                    )
+                                                                )
+                                                            )
+                                                        }
+                                                        slotProps={{
+                                                            htmlInput: {
+                                                                min: 1,
+                                                                max: 20,
+                                                            },
+                                                        }}
+                                                        sx={{ width: 105 }}
+                                                    />
+                                                )}
+                                            </Stack>
+                                        </Paper>
+                                    );
+                                })}
+                            </Stack>
+                        )}
+                    </Box>
+
+                    <Box>
+                        <Typography
+                            sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}
+                        >
+                            Sức chứa phòng
+                        </Typography>
+
+                        <Stack direction="row" spacing={2}>
+                            {danhSachTheLoaiNguoi.map(loaiNguoi => {
+                                const soLuong =
+                                    danhSachSoNguoi.find(
+                                        item => item.theLoaiNguoi === loaiNguoi.value
+                                    )?.soLuong ?? 0;
+
+                                return (
+                                    <TextField
+                                        key={loaiNguoi.value}
+                                        fullWidth
+                                        size="small"
+                                        label={loaiNguoi.label}
+                                        type="number"
+                                        value={soLuong}
+                                        onChange={e =>
+                                            handleSoLuongNguoi(
+                                                loaiNguoi.value,
+                                                Math.max(0, Number(e.target.value))
+                                            )
+                                        }
+                                        slotProps={{
+                                            htmlInput: {
+                                                min: 0,
+                                            },
+                                        }}
+                                    />
                                 );
                             })}
                         </Stack>
+                        {errors.danhSachSoNguoi && (
+                            <Typography color="error" sx={{ fontSize: 12 }}>
+                                {errors.danhSachSoNguoi.message}
+                            </Typography>
+                        )}
                     </Box>
-
                     {/* DIỆN TÍCH */}
                     <Box>
-                        <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                        <Typography
+                            sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
+                        >
                             Diện tích phòng
                         </Typography>
 
                         <TextField
+                            {...register("dienTich")}
                             fullWidth
                             size="small"
                             type="number"
-                            name="dienTich"
                             placeholder="Nhập diện tích phòng"
-                            value={formData.dienTich}
-                            onChange={handleChange}
+                            error={!!errors.dienTich}
+                            helperText={errors.dienTich?.message}
                             slotProps={{
                                 input: {
                                     startAdornment: (
@@ -380,27 +591,25 @@ function ModalThemPhong({ open, onClose }: Props) {
                                         </InputAdornment>
                                     ),
                                 },
-                                htmlInput: {
-                                    min: 1,
-                                },
+                                htmlInput: { min: 0.1 },
                             }}
                         />
                     </Box>
 
                     {/* MÔ TẢ */}
                     <Box>
-                        <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                        <Typography
+                            sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
+                        >
                             Mô tả phòng
                         </Typography>
 
                         <TextField
+                            {...register("moTa")}
                             fullWidth
                             multiline
                             rows={3}
-                            name="moTa"
                             placeholder="Mô tả tiện nghi, đặc điểm nổi bật của phòng..."
-                            value={formData.moTa}
-                            onChange={handleChange}
                         />
                     </Box>
 
@@ -419,6 +628,7 @@ function ModalThemPhong({ open, onClose }: Props) {
             >
                 <Button
                     onClick={onClose}
+                    disabled={loading}
                     variant="outlined"
                     sx={{
                         color: "#52705C",
@@ -433,18 +643,10 @@ function ModalThemPhong({ open, onClose }: Props) {
 
                 <Button
                     variant="contained"
-                    onClick={handleSubmit}
-                    sx={{
-                        bgcolor: "#299653",
-                        "&:hover": { bgcolor: "#207A42" },
-                        borderRadius: 2,
-                        px: 3,
-                        textTransform: "none",
-                        fontWeight: 600,
-                        boxShadow: "none",
-                    }}
+                    onClick={handleSubmit(onSubmit)}
+                    disabled={loading || loadingGiuong}
                 >
-                    Thêm phòng
+                    {loading ? "Đang lưu..." : "Thêm phòng"}
                 </Button>
             </DialogActions>
         </Dialog>
