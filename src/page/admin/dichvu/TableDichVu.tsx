@@ -13,13 +13,6 @@ import {
     IconButton,
     Typography,
     Chip,
-    Stack,
-    Pagination,
-    PaginationItem,
-    FormControl,
-    Select,
-    MenuItem,
-    type SelectChangeEvent
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
@@ -30,6 +23,7 @@ import type { PageResponse } from '../../../services/api';
 import type { DichVu } from '../../../types/dichVu';
 import { searchDichVu } from '../../../services/dichVuService';
 import { toast } from '../../../utils/toast';
+import Pagination from '../../../components/common/Pagination';
 
 interface Props {
     reloadTrigger: number;
@@ -45,25 +39,7 @@ function TableDichVu({ reloadTrigger, handleUpdate }: Props) {
 
     const dataList = dataPage?.content ?? [];
     const totalCount = dataPage?.page.totalElements ?? 0;
-    const totalPages = dataPage?.page.totalPages ?? 0;
 
-    const fromIndex = totalCount === 0
-        ? 0
-        : page * rowsPerPage + 1;
-
-    const toIndex = Math.min(
-        (page + 1) * rowsPerPage,
-        totalCount
-    );
-
-    const handleChangePage = (_event: React.ChangeEvent<unknown>, newPage: number) => {
-        setPage(newPage - 1);
-    };
-
-    const handleChangeRowsPerPage = (event: SelectChangeEvent<number>) => {
-        setRowsPerPage(Number(event.target.value));
-        setPage(0);
-    };
 
     const handleResetSearch = () => {
         setSearchTerm('');
@@ -269,69 +245,16 @@ function TableDichVu({ reloadTrigger, handleUpdate }: Props) {
                 </Table>
             </TableContainer>
 
-            <Stack
-                direction="row"
-                sx={{
-                    px: 2,
-                    py: 1.5,
-                    borderTop: '1px solid #f1f5f9',
-                    flexWrap: 'wrap',
-                    gap: 2,
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
+            <Pagination
+                trang={page}
+                kichThuoc={rowsPerPage}
+                tongSoBanGhi={totalCount}
+                onChangePage={setPage}
+                onChangeRowsPerPage={(kichThuocMoi) => {
+                    setRowsPerPage(kichThuocMoi);
+                    setPage(0);
                 }}
-            >
-                <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                    <Typography
-                        variant="body2"
-                        sx={{ color: '#64748b', fontSize: '0.85rem' }}
-                    >
-                        Hiển thị <strong>{fromIndex} - {toIndex}</strong>
-                        {' '}trong tổng số{' '}
-                        <strong>{totalCount}</strong> dịch vụ
-                    </Typography>
-
-                    <FormControl size="small" sx={{ minWidth: 110 }}>
-                        <Select
-                            value={rowsPerPage}
-                            onChange={handleChangeRowsPerPage}
-                            sx={{
-                                borderRadius: '8px',
-                                bgcolor: '#fff',
-                                fontSize: '0.8125rem',
-                                height: 32,
-                            }}
-                        >
-                            <MenuItem value={5}>5 dòng</MenuItem>
-                            <MenuItem value={10}>10 dòng</MenuItem>
-                            <MenuItem value={25}>25 dòng</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Stack>
-
-                <Pagination
-                    count={totalPages}
-                    page={page + 1}
-                    onChange={handleChangePage}
-                    disabled={loading || totalPages === 0}
-                    renderItem={(item) => (
-                        <PaginationItem
-                            {...item}
-                            sx={{
-                                borderRadius: '8px',
-                                fontWeight: 600,
-                                '&.Mui-selected': {
-                                    bgcolor: '#00695c',
-                                    color: '#fff',
-                                    '&:hover': {
-                                        bgcolor: '#004d40',
-                                    },
-                                },
-                            }}
-                        />
-                    )}
-                />
-            </Stack>
+            />
         </Paper>
     );
 }

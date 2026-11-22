@@ -15,9 +15,6 @@ import {
     Tooltip,
     TextField,
     InputAdornment,
-    Select,
-    MenuItem,
-    Pagination,
     Stack,
     CircularProgress,
 } from '@mui/material';
@@ -26,6 +23,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import type { NguoiDungResponse } from '../../../types/nguoiDung';
+import Pagination from '../../../components/common/Pagination';
 
 interface Props {
     nguoiDungs: NguoiDungResponse[];
@@ -536,101 +534,18 @@ function TableUser({
             {/* Thanh phân trang */}
             <Box
                 sx={{
-                    px: 2.5,
-                    py: 2,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 2,
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
                     borderTop: '1px solid #F1F5F9',
                     bgcolor: '#FFFFFF',
                 }}
             >
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 1.5
-                    }}
-                >
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            color: '#64748B',
-                            fontSize: '0.85rem'
-                        }}
-                    >
-                        Số hàng mỗi trang:
-                    </Typography>
-
-                    <Select
-                        size="small"
-                        value={rowsPerPage}
-                        onChange={(e) =>
-                            onRowsPerPageChange(Number(e.target.value))
-                        }
-                        sx={{
-                            height: 32,
-                            fontSize: '0.85rem',
-                            borderRadius: 1.5,
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#E2E8F0'
-                            },
-                        }}
-                    >
-                        <MenuItem value={5}>5</MenuItem>
-                        <MenuItem value={10}>10</MenuItem>
-                        <MenuItem value={20}>20</MenuItem>
-                    </Select>
-
-                    <Typography
-                        variant="body2"
-                        sx={{ color: '#94A3B8', px: 0.5 }}
-                    >
-                        |
-                    </Typography>
-
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            color: '#64748B',
-                            fontSize: '0.85rem'
-                        }}
-                    >
-                        {totalElements === 0
-                            ? 'Đang xem 0 bản ghi'
-                            : `Đang xem ${page * rowsPerPage + 1} - ${Math.min(
-                                (page + 1) * rowsPerPage,
-                                totalElements
-                            )} của ${totalElements} bản ghi`
-                        }
-                    </Typography>
-                </Box>
-
                 <Pagination
-                    count={Math.max(1, Math.ceil(totalElements / rowsPerPage))}
-                    page={page + 1}
-                    onChange={(_, value) => onPageChange(value - 1)}
-                    shape="rounded"
-                    showFirstButton
-                    showLastButton
-                    disabled={loading || totalElements === 0}
-                    sx={{
-                        '& .MuiPaginationItem-root': {
-                            color: '#475569',
-                            fontWeight: 600,
-                            fontSize: '0.85rem',
-                        },
-                        '& .Mui-selected': {
-                            bgcolor: '#0D9488 !important',
-                            color: '#FFFFFF !important',
-                        },
-                    }}
+                    trang={page}
+                    kichThuoc={rowsPerPage}
+                    tongSoBanGhi={totalElements}
+                    onChangePage={onPageChange}
+                    onChangeRowsPerPage={onRowsPerPageChange}
                 />
             </Box>
-
         </Paper>
     );
 }

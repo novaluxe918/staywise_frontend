@@ -19,8 +19,7 @@ import {
     Typography,
     InputAdornment,
     CircularProgress,
-    Pagination,
-    type SelectChangeEvent,
+
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -35,13 +34,14 @@ import {
 import type { TienIch } from '../../../types/tienIch';
 import { getAllTienIch, xoaTienIch } from '../../../services/tienIchService';
 import { toast } from '../../../utils/toast';
+import Pagination from '../../../components/common/Pagination';
 
 interface TableTienIchProps {
     handleUpdate: (item: TienIch) => void;
-   
+
 }
 
-function TableTienIch({ handleUpdate}: TableTienIchProps) {
+function TableTienIch({ handleUpdate }: TableTienIchProps) {
     const [danhSachTienIch, setDsTienIch] = useState<TienIch[]>([]);
     const [tongSoLuong, setTongSoLuong] = useState<number>(0);
     const [tongSoTrang, setTongSoTrang] = useState<number>(0);
@@ -96,21 +96,6 @@ function TableTienIch({ handleUpdate}: TableTienIchProps) {
         taiDuLieu();
     }, [taiDuLieu]);
 
-
-    const handleChangePage = (
-        _event: React.ChangeEvent<unknown>,
-        newPage: number
-    ) => {
-        setTrang(newPage - 1);
-    };
-
-    // Thay đổi số dòng mỗi trang
-    const handleChangeRowsPerPage = (
-        event: SelectChangeEvent<number>
-    ) => {
-        setSoDongMoiTrang(Number(event.target.value));
-        setTrang(0);
-    };
 
 
     const handleLamMoi = () => {
@@ -355,7 +340,7 @@ function TableTienIch({ handleUpdate}: TableTienIchProps) {
                                         {/* 7. Thao tác */}
                                         <TableCell align="center">
                                             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                                          
+
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton size="small" color="warning" onClick={() => handleUpdate(item)}>
                                                         <EditIcon fontSize="small" />
@@ -389,53 +374,16 @@ function TableTienIch({ handleUpdate}: TableTienIchProps) {
                     </TableBody>
                 </Table>
 
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        px: 2,
-                        py: 1,
-                        flexWrap: 'wrap',
-                        gap: 2,
+                <Pagination
+                    trang={trang}
+                    kichThuoc={soDongMoiTrang}
+                    tongSoBanGhi={tongSoLuong}
+                    onChangePage={setTrang}
+                    onChangeRowsPerPage={(kichThuocMoi) => {
+                        setSoDongMoiTrang(kichThuocMoi);
+                        setTrang(0);
                     }}
-                >
-                    {/* Thông tin hiển thị */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                            Đang hiển thị{' '}
-                            <strong>
-                                {tongSoLuong === 0 ? 0 : trang * soDongMoiTrang + 1}
-                                {' - '}
-                                {Math.min((trang + 1) * soDongMoiTrang, tongSoLuong)}
-                            </strong>
-                            {' '}trên tổng số{' '}
-                            <strong>{tongSoLuong}</strong> tiện ích
-                        </Typography>
-                        <FormControl size="small" sx={{ minWidth: 110 }}>
-                            <Select
-                                value={soDongMoiTrang}
-                                onChange={handleChangeRowsPerPage}
-                            >
-                                <MenuItem value={5}>5 dòng</MenuItem>
-                                <MenuItem value={10}>10 dòng</MenuItem>
-                                <MenuItem value={20}>20 dòng</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Box>
-
-                    {/* Các nút số trang */}
-                    <Pagination
-                        count={Math.max(1, Math.ceil(tongSoLuong / soDongMoiTrang))}
-                        page={trang + 1}
-                        onChange={handleChangePage}
-                        disabled={dangTai}
-                        color="primary"
-                        shape="rounded"
-                        showFirstButton
-                        showLastButton
-                    />
-                </Box>
+                />
             </TableContainer>
         </Box>
     );

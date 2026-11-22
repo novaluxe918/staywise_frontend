@@ -88,24 +88,22 @@ function QuanLyUser() {
         setPage(0);
     };
 
-    // Chuyển trang
-    const handlePageChange = (newPage: number) => {
+    const handleChangePage = (newPage: number) => {
         setPage(newPage);
     };
 
-    // Thay đổi số dòng
-    const handleRowsPerPageChange = (value: number) => {
+    const handleChangeRowsPerPage = (value: number) => {
         setRowsPerPage(value);
         setPage(0);
     };
 
-   
+
     const handleXemChiTiet = (user: NguoiDungResponse) => {
         setSelectedUser(user);
         setOpenDetail(true);
     };
 
-    
+
     const handleOpenConfirm = (user: NguoiDungResponse) => {
         setSelectedUser(user);
         setOpenConfirm(true);
@@ -194,8 +192,8 @@ function QuanLyUser() {
                 onSearchChange={handleSearchChange}
                 onVaiTroChange={handleVaiTroChange}
                 onTrangThaiChange={handleTrangThaiChange}
-                onPageChange={handlePageChange}
-                onRowsPerPageChange={handleRowsPerPageChange} handleXemChiTiet={handleXemChiTiet} handleOpenConfirm={handleOpenConfirm} />
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage} handleXemChiTiet={handleXemChiTiet} handleOpenConfirm={handleOpenConfirm} />
 
             <ModalXemChiTiet user={selectedUser} open={openDetail} onClose={() => setOpenDetail(false)} />
 

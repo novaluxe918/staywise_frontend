@@ -17,23 +17,20 @@ import {
     FormControl,
     Button,
     Typography,
-    Pagination,
-    PaginationItem,
     Avatar,
     Stack,
-    type SelectChangeEvent,
 } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { type TheLoaiTienIch } from '../../../types/theLoaiTienIch';
 import type { PageResponse } from '../../../services/api';
 import { searchTheLoai, xoaTheLoai } from '../../../services/theLoaiTienIchService';
 import { toast } from '../../../utils/toast';
+import Pagination from '../../../components/common/Pagination';
 
 interface Props {
     reloadTrigger?: number;
@@ -73,16 +70,16 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0, handleUpdate }:
             setDangTai(false);
         }
     }, [tuKhoaDebounce, trangHienTai, soDongMoiTrang]);
-    
-    const handleXoa  = async(id:number) => {
-        try{
+
+    const handleXoa = async (id: number) => {
+        try {
             await xoaTheLoai(id)
             toast.success("Xóa thành công!");
             await taiDuLieu();
-            
-        } catch{
+
+        } catch {
             toast.error("Xóa thất bại");
-            
+
         }
     }
 
@@ -91,21 +88,7 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0, handleUpdate }:
     }, [taiDuLieu, reloadTrigger]);
 
 
-    const handleChangePage = (_: unknown, newPage: number) => {
-        setTrangHienTai(newPage - 1);
-    };
-
-    const handleChangeRowsPerPage = (event: SelectChangeEvent<number>) => {
-        setSoDongMoiTrang(Number(event.target.value));
-        setTrangHienTai(0);
-    };
-
     const totalElements = dataPage?.page.totalElements ?? 0;
-    const totalPages = dataPage?.page.totalPages ?? 0;
-
-    const fromIndex =
-        totalElements === 0 ? 0 : trangHienTai * soDongMoiTrang + 1;
-    const toIndex = Math.min((trangHienTai + 1) * soDongMoiTrang, totalElements);
 
     return (
         <Box sx={{ p: { xs: 2, md: 3.5 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
@@ -353,74 +336,16 @@ export default function TableTheLoaiTienIch({ reloadTrigger = 0, handleUpdate }:
                 </TableContainer>
 
 
-
-                <Stack
-                    direction="row"
-                    sx={{
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        px: 3,
-                        py: 2,
-                        borderTop: '1px solid #f1f5f9',
-                        flexWrap: 'wrap',
-                        gap: 2,
+                <Pagination
+                    trang={trangHienTai}
+                    kichThuoc={soDongMoiTrang}
+                    tongSoBanGhi={totalElements}
+                    onChangePage={setTrangHienTai}
+                    onChangeRowsPerPage={(kichThuocMoi) => {
+                        setSoDongMoiTrang(kichThuocMoi);
+                        setTrangHienTai(0);
                     }}
-                >
-                    {/* Hiển thị thông tin */}
-                    <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-
-                        <Typography
-                            variant="body2"
-                            sx={{ color: '#64748b', fontSize: '0.85rem' }}
-                        >
-                            Hiển thị <strong>{fromIndex} - {toIndex}</strong>
-                            {' '}trong tổng số{' '}
-                            <strong>{totalElements}</strong> thể loại tiện ích
-                        </Typography>
-
-                        <FormControl size="small" sx={{ minWidth: 110 }}>
-                            <Select
-                                value={soDongMoiTrang}
-                                onChange={handleChangeRowsPerPage}
-                                sx={{
-                                    borderRadius: '8px',
-                                    bgcolor: '#fff',
-                                    fontSize: '0.8125rem',
-                                    height: 32,
-                                }}
-                            >
-                                <MenuItem value={5}>5 dòng</MenuItem>
-                                <MenuItem value={10}>10 dòng</MenuItem>
-                                <MenuItem value={20}>20 dòng</MenuItem>
-                            </Select>
-                        </FormControl>
-
-                    </Stack>
-
-                    <Pagination
-                        count={totalPages}
-                        page={trangHienTai + 1}
-                        onChange={handleChangePage}
-                        disabled={dangTai || totalPages === 0}
-                        renderItem={(item) => (
-                            <PaginationItem
-                                {...item}
-                                sx={{
-                                    borderRadius: '8px',
-                                    fontWeight: 600,
-
-                                    '&.Mui-selected': {
-                                        bgcolor: '#00695c',
-                                        color: '#fff',
-                                        '&:hover': {
-                                            bgcolor: '#004d40',
-                                        },
-                                    },
-                                }}
-                            />
-                        )}
-                    />
-                </Stack>
+                />
             </Card>
         </Box>
     );

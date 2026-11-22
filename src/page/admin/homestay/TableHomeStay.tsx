@@ -8,7 +8,6 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TablePagination,
     Typography,
     Stack,
     IconButton,
@@ -34,6 +33,7 @@ import {
 import type { PageResponse } from "../../../services/api";
 import type { HomeStay } from "../../../types/homestay";
 import { getDanhSachHomeStay } from "../../../services/homestayService";
+import Pagination from "../../../components/common/Pagination";
 
 const DanhSachTooltip = ({
     danhSach,
@@ -209,12 +209,8 @@ function TableHomeStay({ handleXetDuyet, reloadTrigger }: Props) {
         fetchHomeStay();
     }, [tuKhoa, page, rowsPerPage, reloadTrigger]);
 
-    const handleChangePage = (_event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
+    const handleChangeRowsPerPage = (kichThuocMoi: number) => {
+        setRowsPerPage(kichThuocMoi);
         setPage(0);
     };
 
@@ -673,36 +669,18 @@ function TableHomeStay({ handleXetDuyet, reloadTrigger }: Props) {
                     </Table>
                 </Box>
 
-                {/* Pagination */}
                 <Box
                     sx={{
                         borderTop: "1px solid #e2e8f0",
                         backgroundColor: "#f8fafc",
-                        px: 1,
                     }}
                 >
-                    <TablePagination
-                        component="div"
-                        count={dataPage?.page.totalElements ?? 0}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                        rowsPerPageOptions={[5, 10, 20]}
-                        labelRowsPerPage="Hiển thị:"
-                        labelDisplayedRows={({ from, to, count }) =>
-                            `${from}–${to} trong tổng số ${count}`
-                        }
-                        sx={{
-                            "& .MuiTablePagination-toolbar": {
-                                minHeight: 56,
-                            },
-                            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-                                fontSize: 12.5,
-                                fontWeight: 500,
-                                color: "#64748b",
-                            },
-                        }}
+                    <Pagination
+                        trang={page}
+                        kichThuoc={rowsPerPage}
+                        tongSoBanGhi={dataPage?.page.totalElements ?? 0}
+                        onChangePage={setPage}
+                        onChangeRowsPerPage={handleChangeRowsPerPage}
                     />
                 </Box>
             </TableContainer>

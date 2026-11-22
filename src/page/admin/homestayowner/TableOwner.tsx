@@ -19,7 +19,6 @@ import {
     Select,
     FormControl,
     alpha,
-    TablePagination,
 } from '@mui/material';
 
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -31,8 +30,8 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 
 import type { OwnerRow } from '../../../types/nguoiDung';
+import Pagination from '../../../components/common/Pagination';
 
-// Thông tin hiển thị trạng thái
 const getTrangThaiInfo = (trangThai?: string) => {
     switch (trangThai) {
         case 'CHUA_XAC_MINH':
@@ -103,26 +102,17 @@ function TableOwner({
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Chuyển trang
-    const handleChangePage = (
-        _: unknown,
-        newPage: number
-    ) => {
-        setPage(newPage);
-        onPageChange(newPage, rowsPerPage);
+    const handleChangePage = (trangMoi: number) => {
+        setPage(trangMoi);
+        onPageChange(trangMoi, rowsPerPage);
     };
 
-    // Thay đổi số dòng mỗi trang
-    const handleChangeRowsPerPage = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const newSize = Number(e.target.value);
-
-        setRowsPerPage(newSize);
+    const handleChangeRowsPerPage = (kichThuocMoi: number) => {
+        setRowsPerPage(kichThuocMoi);
         setPage(0);
-
-        onPageChange(0, newSize);
+        onPageChange(0, kichThuocMoi);
     };
+
     return (
         <Paper
             elevation={0}
@@ -395,7 +385,7 @@ function TableOwner({
                                                     fontWeight: 600,
                                                 }}
                                             >
-                                                {index + 1}
+                                                {page * rowsPerPage + index + 1}
                                             </Typography>
                                         </TableCell>
 
@@ -574,18 +564,12 @@ function TableOwner({
                 </Table>
             </TableContainer>
 
-            <TablePagination
-                component="div"
-                count={totalElements}
-                page={page}
-                rowsPerPage={rowsPerPage}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 20]}
-                labelRowsPerPage="Số dòng mỗi trang"
-                labelDisplayedRows={({ from, to, count }) =>
-                    `Đang hiển thị ${from}-${to} trên tổng số ${count} chủ HomeStay`
-                }
+            <Pagination
+                trang={page}
+                kichThuoc={rowsPerPage}
+                tongSoBanGhi={totalElements}
+                onChangePage={handleChangePage}
+                onChangeRowsPerPage={handleChangeRowsPerPage}
             />
         </Paper>
     );
