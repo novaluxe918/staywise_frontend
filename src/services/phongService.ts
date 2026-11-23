@@ -4,13 +4,18 @@ import api, { type PageResponse } from "./api";
 export const savePhong = async (data: PhongRequest) => {
     const formData = new FormData();
 
+    // Nếu có ID thì gửi lên để cập nhật
+    if (data.id) {
+        formData.append("id", String(data.id));
+    }
+
     formData.append("maHomeStay", String(data.maHomeStay));
     formData.append("tenPhong", data.tenPhong);
     formData.append("moTa", data.moTa);
     formData.append("dienTich", String(data.dienTich));
     formData.append("loaiPhong", data.loaiPhong);
 
-   
+    // Danh sách giường
     data.danhSachGiuong.forEach((item, index) => {
         formData.append(
             `danhSachGiuong[${index}].maLoaiGiuong`,
@@ -23,7 +28,7 @@ export const savePhong = async (data: PhongRequest) => {
         );
     });
 
-  
+    // Danh sách sức chứa
     data.danhSachSoNguoi.forEach((item, index) => {
         formData.append(
             `danhSachSoNguoi[${index}].theLoaiNguoi`,
@@ -41,7 +46,6 @@ export const savePhong = async (data: PhongRequest) => {
     return response.data;
 };
 
-
 export const showAllPhong = async (
     trang: number,
     kichThuoc: number
@@ -53,5 +57,10 @@ export const showAllPhong = async (
         },
     });
 
+    return response.data;
+};
+
+export const xoaPhong = async (id: number) => {
+    const response = await api.delete(`/phong/xoa/${id}`);
     return response.data;
 };

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
 
+import React, { useEffect, useState } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -26,32 +26,55 @@ import {
     danhSachLoaiPhong,
     danhSachTheLoaiNguoi,
     type LoaiPhong,
+    type Phong,
     type PhongRequest,
     type SoNguoiRequest,
 } from "../../../types/phong";
 
 import type { LoaiGiuong } from "../../../types/giuong";
-
-import { showAllGiuong } from "../../../services/giuongService";
 import { savePhong } from "../../../services/phongService";
+import { showAllGiuong } from "../../../services/giuongService";
+
 import { useForm } from "react-hook-form";
-import { phongSchema, type PhongFormData } from "../../../schemas/phongSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { phongSchema, type PhongFormData } from "../../../schemas/phongSchema";
 import { toast } from "../../../utils/toast";
+
 
 interface Props {
     open: boolean;
     onClose: () => void;
     maHomeStay: number;
     onSuccess?: () => void;
+    duLieuUpdate?: Phong | null;
 }
+
+const taoDanhSachSoNguoiMacDinh = () =>
+    danhSachTheLoaiNguoi.map(item => ({
+        theLoaiNguoi: item.value,
+        soLuong: item.value === "NGUOI_LON" ? 1 : 0,
+    }));
+
+const giaTriMacDinh: PhongFormData = {
+    tenPhong: "",
+    loaiPhong: "",
+    dienTich: "",
+    moTa: "",
+    giuongDaChon: [],
+    danhSachSoNguoi: taoDanhSachSoNguoiMacDinh(),
+};
 
 function ModalThemPhong({
     open,
     onClose,
     maHomeStay,
     onSuccess,
+    duLieuUpdate,
 }: Props) {
+
+    const [danhSachGiuong, setDanhSachGiuong] = useState<LoaiGiuong[]>([]);
+    const [loadingGiuong, setLoadingGiuong] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const {
         register,
@@ -62,45 +85,60 @@ function ModalThemPhong({
         formState: { errors },
     } = useForm<PhongFormData>({
         resolver: zodResolver(phongSchema),
-        defaultValues: {
-            tenPhong: "",
-            loaiPhong: "",
-            dienTich: "",
-            moTa: "",
-            giuongDaChon: [],
-            danhSachSoNguoi: danhSachTheLoaiNguoi.map(item => ({
-                theLoaiNguoi: item.value,
-                soLuong: item.value === "NGUOI_LON" ? 1 : 0,
-            })),
-        },
+        defaultValues: giaTriMacDinh,
     });
-    const [danhSachGiuong, setDanhSachGiuong] = useState<LoaiGiuong[]>([]);
-    const [loadingGiuong, setLoadingGiuong] = useState(false);
 
     const giuongDaChon = watch("giuongDaChon");
     const danhSachSoNguoi = watch("danhSachSoNguoi");
     const loaiPhongDaChon = watch("loaiPhong");
 
-    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        if (!open) return;
+
+        if (!duLieuUpdate) {
+            reset({
+                ...giaTriMacDinh,
+                danhSachSoNguoi: taoDanhSachSoNguoiMacDinh(),
+            });
+            return;
+        }
+
+        reset({
+            tenPhong: duLieuUpdate.tenPhong ?? "",
+            loaiPhong: duLieuUpdate.loaiPhong ?? "",
+            dienTich: String(duLieuUpdate.dienTich ?? ""),
+            moTa: duLieuUpdate.moTa ?? "",
+
+            giuongDaChon: duLieuUpdate.danhSachGiuong?.map(item => ({
+                maLoaiGiuong: item.maLoaiGiuong,
+                soLuong: item.soLuong,
+            })) ?? [],
+
+            danhSachSoNguoi: danhSachTheLoaiNguoi.map(item => ({
+                theLoaiNguoi: item.value,
+                soLuong:
+                    duLieuUpdate.danhSachSoNguoi?.find(
+                        x => x.theLoaiNguoi === item.value
+                    )?.soLuong ?? 0,
+            })),
+        });
+    }, [open, duLieuUpdate, reset]);
+
+    // ==================== LOAD BEDS ====================
+
     useEffect(() => {
         if (!open) return;
 
         const layDanhSachGiuong = async () => {
-            setLoadingGiuong(true);
-
             try {
-                const response = await showAllGiuong("", 0, 100);
-                const duLieu = response as unknown as {
-                    content?: LoaiGiuong[];
-                    page?: { content?: LoaiGiuong[] };
-                };
+                setLoadingGiuong(true);
 
-                setDanhSachGiuong(
-                    duLieu.content ?? duLieu.page?.content ?? []
-                );
+                const response = await showAllGiuong("", 0, 100);
+
+                setDanhSachGiuong(response.content);
             } catch (error) {
                 console.error("Lỗi lấy danh sách giường:", error);
-                window.alert("Không thể tải danh sách loại giường!");
+                toast.error("Không thể tải danh sách loại giường!");
             } finally {
                 setLoadingGiuong(false);
             }
@@ -109,26 +147,21 @@ function ModalThemPhong({
         layDanhSachGiuong();
     }, [open]);
 
-
-
-
     const handleChonGiuong = (id: number) => {
-        const danhSach = watch("giuongDaChon");
-
-        const tonTai = danhSach.some(
+        const daChon = giuongDaChon.some(
             item => item.maLoaiGiuong === id
         );
 
-        const ketQua = tonTai
-            ? danhSach.filter(item => item.maLoaiGiuong !== id)
-            : [...danhSach, { maLoaiGiuong: id, soLuong: 1 }];
-
-        setValue("giuongDaChon", ketQua, {
-            shouldValidate: true,
-        });
+        setValue(
+            "giuongDaChon",
+            daChon
+                ? giuongDaChon.filter(item => item.maLoaiGiuong !== id)
+                : [...giuongDaChon, { maLoaiGiuong: id, soLuong: 1 }],
+            { shouldValidate: true }
+        );
     };
 
-    const handleSoLuong = (id: number, soLuong: number) => {
+    const handleSoLuongGiuong = (id: number, soLuong: number) => {
         setValue(
             "giuongDaChon",
             giuongDaChon.map(item =>
@@ -155,62 +188,54 @@ function ModalThemPhong({
         );
     };
 
+    const onSubmit = async (data: PhongFormData) => {
+        try {
+            setLoading(true);
 
+            const duLieu: PhongRequest = {
+                ...(duLieuUpdate ? { id: duLieuUpdate.id } : {}),
+                maHomeStay,
+                tenPhong: data.tenPhong,
+                moTa: data.moTa,
+                dienTich: Number(data.dienTich),
+                loaiPhong: data.loaiPhong as LoaiPhong,
+                danhSachGiuong: data.giuongDaChon,
+                danhSachSoNguoi: data.danhSachSoNguoi.filter(
+                    item => item.soLuong > 0
+                ),
+            };
 
-   const onSubmit = async (data: PhongFormData) => {
-    if (!maHomeStay) {
-        toast.error("Không xác định được HomeStay!");
-        return;
-    }
+            await savePhong(duLieu);
 
-    const duLieu: PhongRequest = {
-        maHomeStay,
-        tenPhong: data.tenPhong,
-        loaiPhong: data.loaiPhong as LoaiPhong,
-        dienTich: Number(data.dienTich),
-        moTa: data.moTa,
-        danhSachGiuong: data.giuongDaChon,
-        danhSachSoNguoi: data.danhSachSoNguoi.filter(
-            item => item.soLuong > 0
-        ),
+            toast.success(
+                `${duLieuUpdate ? "Cập nhật" : "Thêm"} phòng thành công!`
+            );
+
+            reset({
+                ...giaTriMacDinh,
+                danhSachSoNguoi: taoDanhSachSoNguoiMacDinh(),
+            });
+
+            onClose();
+            onSuccess?.();
+
+        } catch (error: any) {
+            console.error("Lỗi lưu phòng:", error);
+            console.log("Backend trả về:", error.response?.data);
+
+            toast.error(
+                `${duLieuUpdate ? "Cập nhật" : "Thêm"} phòng thất bại!`
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
-    try {
-        setLoading(true);
 
-        await savePhong(duLieu);
-
-        toast.success("Thêm phòng thành công!");
-
-        reset();
-        onClose();
-        onSuccess?.();
-
-    } catch (error: any) {
-    console.error("Lỗi thêm phòng:", error);
-
-    console.log("HTTP Status:", error.response?.status);
-    console.log("Backend trả về:", error.response?.data);
-
-    const message =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Thêm phòng thất bại!";
-
-    toast.error(
-        typeof message === "string"
-            ? message
-            : JSON.stringify(message)
-    );
-
-    } finally {
-        setLoading(false);
-    }
-};
     return (
         <Dialog
             open={open}
-            onClose={onClose}
+            onClose={loading ? undefined : onClose}
             fullWidth
             maxWidth="sm"
             slotProps={{
@@ -222,7 +247,9 @@ function ModalThemPhong({
                 },
             }}
         >
+
             {/* HEADER */}
+
             <DialogTitle
                 sx={{
                     bgcolor: "#EAF7EE",
@@ -230,11 +257,8 @@ function ModalThemPhong({
                     py: 2.5,
                 }}
             >
-                <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{ alignItems: "center" }}
-                >
+                <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 2 }}>
+
                     <Box
                         sx={{
                             width: 48,
@@ -259,37 +283,40 @@ function ModalThemPhong({
                                 color: "#185C35",
                             }}
                         >
-                            Thêm phòng mới
+                            {duLieuUpdate ? "Cập nhật phòng" : "Thêm phòng mới"}
                         </Typography>
 
                         <Typography sx={{ fontSize: 13, color: "#668573" }}>
-                            Cung cấp thông tin chi tiết về phòng
+                            {duLieuUpdate
+                                ? "Chỉnh sửa thông tin phòng của bạn"
+                                : "Cung cấp thông tin chi tiết về phòng"}
                         </Typography>
                     </Box>
 
                     <IconButton
                         onClick={onClose}
+                        disabled={loading}
                         sx={{ color: "#64816D" }}
                     >
                         <CloseIcon />
                     </IconButton>
-                </Stack>
+
+                </Box>
             </DialogTitle>
 
             {/* CONTENT */}
+
             <DialogContent sx={{ px: 3, py: 3 }}>
                 <Stack spacing={3}>
 
                     {/* TÊN PHÒNG */}
+
                     <Box>
                         <Typography
                             component="div"
                             sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
                         >
-                            Tên phòng{" "}
-                            <Typography component="span" color="error">
-                                *
-                            </Typography>
+                            Tên phòng <Typography component="span" color="error">*</Typography>
                         </Typography>
 
                         <TextField
@@ -303,15 +330,17 @@ function ModalThemPhong({
                     </Box>
 
                     {/* LOẠI PHÒNG */}
+
                     <Box>
-                        <Box sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>
-                            Loại phòng{" "}
-                            <Typography component="span" color="error">
-                                *
-                            </Typography>
-                        </Box>
+                        <Typography
+                            component="div"
+                            sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}
+                        >
+                            Loại phòng <Typography component="span" color="error">*</Typography>
+                        </Typography>
 
                         <Box
+                            component="div"
                             sx={{
                                 display: "grid",
                                 gridTemplateColumns: "repeat(2, 1fr)",
@@ -320,7 +349,6 @@ function ModalThemPhong({
                         >
                             {danhSachLoaiPhong.map(loai => {
                                 const selected = loaiPhongDaChon === loai.value;
-
 
                                 return (
                                     <Paper
@@ -338,9 +366,7 @@ function ModalThemPhong({
                                             border: selected
                                                 ? "2px solid #299653"
                                                 : "1px solid #E0E8E2",
-                                            bgcolor: selected
-                                                ? "#F0FAF3"
-                                                : "#fff",
+                                            bgcolor: selected ? "#F0FAF3" : "#fff",
                                             transition: "0.2s",
                                             "&:hover": {
                                                 borderColor: "#299653",
@@ -348,30 +374,13 @@ function ModalThemPhong({
                                             },
                                         }}
                                     >
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                            }}
-                                        >
+                                        <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
                                             <Box sx={{ flex: 1 }}>
-                                                <Typography
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        fontSize: 13,
-                                                        color: "#285C3B",
-                                                    }}
-                                                >
+                                                <Typography sx={{ fontWeight: 600, fontSize: 13, color: "#285C3B" }}>
                                                     {loai.label}
                                                 </Typography>
 
-                                                <Typography
-                                                    sx={{
-                                                        fontSize: 11,
-                                                        color: "text.secondary",
-                                                    }}
-                                                >
+                                                <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
                                                     {loai.description}
                                                 </Typography>
                                             </Box>
@@ -383,7 +392,7 @@ function ModalThemPhong({
                                                         height: 19,
                                                         borderRadius: "50%",
                                                         bgcolor: "#299653",
-                                                        color: "white",
+                                                        color: "#fff",
                                                         fontSize: 12,
                                                         display: "flex",
                                                         alignItems: "center",
@@ -393,37 +402,28 @@ function ModalThemPhong({
                                                     ✓
                                                 </Box>
                                             )}
-                                        </Box>
-                                        {errors.loaiPhong && (
-                                            <Typography
-                                                sx={{
-                                                    color: "error.main",
-                                                    fontSize: 12,
-                                                    mt: 1,
-                                                }}
-                                            >
-                                                {errors.loaiPhong.message}
-                                            </Typography>
-                                        )}
+                                        </Stack>
                                     </Paper>
                                 );
                             })}
                         </Box>
+
+                        {errors.loaiPhong && (
+                            <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>
+                                {errors.loaiPhong.message}
+                            </Typography>
+                        )}
                     </Box>
 
-                    {/* CHỌN GIƯỜNG */}
-                    <Box>
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ alignItems: "center", mb: 1.5 }}
-                        >
-                            <KingBedOutlinedIcon sx={{ color: "#299653" }} />
+                    {/* DANH SÁCH GIƯỜNG */}
 
+                    <Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                            <KingBedOutlinedIcon sx={{ color: "#299653" }} />
                             <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
                                 Danh sách giường
                             </Typography>
-                        </Stack>
+                        </Box>
 
                         {loadingGiuong ? (
                             <Typography color="text.secondary">
@@ -447,24 +447,14 @@ function ModalThemPhong({
                                             sx={{
                                                 p: 1.2,
                                                 borderRadius: 2,
-                                                borderColor: selected
-                                                    ? "#299653"
-                                                    : "#E0E8E2",
-                                                bgcolor: selected
-                                                    ? "#F3FAF5"
-                                                    : "#fff",
+                                                borderColor: selected ? "#299653" : "#E0E8E2",
+                                                bgcolor: selected ? "#F3FAF5" : "#fff",
                                             }}
                                         >
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                sx={{ alignItems: "center" }}
-                                            >
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                                 <Checkbox
                                                     checked={!!selected}
-                                                    onChange={() =>
-                                                        handleChonGiuong(giuong.id)
-                                                    }
+                                                    onChange={() => handleChonGiuong(giuong.id)}
                                                     sx={{
                                                         color: "#A5B8AA",
                                                         "&.Mui-checked": {
@@ -474,12 +464,7 @@ function ModalThemPhong({
                                                 />
 
                                                 <Box sx={{ flex: 1 }}>
-                                                    <Typography
-                                                        sx={{
-                                                            fontWeight: 600,
-                                                            fontSize: 13,
-                                                        }}
-                                                    >
+                                                    <Typography sx={{ fontWeight: 600, fontSize: 13 }}>
                                                         {giuong.tenGiuong}
                                                     </Typography>
                                                 </Box>
@@ -491,14 +476,11 @@ function ModalThemPhong({
                                                         label="Số lượng"
                                                         value={selected.soLuong}
                                                         onChange={e =>
-                                                            handleSoLuong(
+                                                            handleSoLuongGiuong(
                                                                 giuong.id,
                                                                 Math.max(
                                                                     1,
-                                                                    Math.min(
-                                                                        20,
-                                                                        Number(e.target.value)
-                                                                    )
+                                                                    Math.min(20, Number(e.target.value))
                                                                 )
                                                             )
                                                         }
@@ -511,7 +493,7 @@ function ModalThemPhong({
                                                         sx={{ width: 105 }}
                                                     />
                                                 )}
-                                            </Stack>
+                                            </Box>
                                         </Paper>
                                     );
                                 })}
@@ -519,19 +501,18 @@ function ModalThemPhong({
                         )}
                     </Box>
 
+                    {/* SỨC CHỨA */}
+
                     <Box>
-                        <Typography
-                            sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}
-                        >
+                        <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>
                             Sức chứa phòng
                         </Typography>
 
                         <Stack direction="row" spacing={2}>
                             {danhSachTheLoaiNguoi.map(loaiNguoi => {
-                                const soLuong =
-                                    danhSachSoNguoi.find(
-                                        item => item.theLoaiNguoi === loaiNguoi.value
-                                    )?.soLuong ?? 0;
+                                const soLuong = danhSachSoNguoi.find(
+                                    item => item.theLoaiNguoi === loaiNguoi.value
+                                )?.soLuong ?? 0;
 
                                 return (
                                     <TextField
@@ -548,25 +529,27 @@ function ModalThemPhong({
                                             )
                                         }
                                         slotProps={{
-                                            htmlInput: {
-                                                min: 0,
-                                            },
+                                            htmlInput: { min: 0 },
                                         }}
                                     />
                                 );
                             })}
                         </Stack>
+
                         {errors.danhSachSoNguoi && (
-                            <Typography color="error" sx={{ fontSize: 12 }}>
+                            <Typography
+                                color="error"
+                                sx={{ fontSize: 12, mt: 1 }}
+                            >
                                 {errors.danhSachSoNguoi.message}
                             </Typography>
                         )}
                     </Box>
+
                     {/* DIỆN TÍCH */}
+
                     <Box>
-                        <Typography
-                            sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
-                        >
+                        <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                             Diện tích phòng
                         </Typography>
 
@@ -597,10 +580,9 @@ function ModalThemPhong({
                     </Box>
 
                     {/* MÔ TẢ */}
+
                     <Box>
-                        <Typography
-                            sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}
-                        >
+                        <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                             Mô tả phòng
                         </Typography>
 
@@ -619,6 +601,7 @@ function ModalThemPhong({
             <Divider />
 
             {/* FOOTER */}
+
             <DialogActions
                 sx={{
                     px: 3,
@@ -645,10 +628,24 @@ function ModalThemPhong({
                     variant="contained"
                     onClick={handleSubmit(onSubmit)}
                     disabled={loading || loadingGiuong}
+                    sx={{
+                        borderRadius: 2,
+                        px: 3,
+                        textTransform: "none",
+                        bgcolor: "#299653",
+                        "&:hover": {
+                            bgcolor: "#218348",
+                        },
+                    }}
                 >
-                    {loading ? "Đang lưu..." : "Thêm phòng"}
+                    {loading
+                        ? "Đang lưu..."
+                        : duLieuUpdate
+                            ? "Cập nhật phòng"
+                            : "Thêm phòng"}
                 </Button>
             </DialogActions>
+
         </Dialog>
     );
 }

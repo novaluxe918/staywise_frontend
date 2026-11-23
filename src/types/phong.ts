@@ -92,6 +92,7 @@ export interface Phong {
 }
 
 export interface PhongRequest {
+    id?: number;
     maHomeStay: number;
     tenPhong: string;
     moTa: string;

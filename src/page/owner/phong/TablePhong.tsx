@@ -17,7 +17,6 @@ import {
     CircularProgress,
 } from "@mui/material";
 
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import KingBedOutlinedIcon from "@mui/icons-material/KingBedOutlined";
@@ -37,7 +36,6 @@ interface Props {
     onChangePage: (trangMoi: number) => void;
     onChangeRowsPerPage: (kichThuocMoi: number) => void;
 
-    onView: (phong: Phong) => void;
     onEdit: (phong: Phong) => void;
     onDelete: (phong: Phong) => void;
 }
@@ -50,7 +48,6 @@ function TablePhong({
     tongSoBanGhi,
     onChangePage,
     onChangeRowsPerPage,
-    onView,
     onEdit,
     onDelete,
 }: Props) {
@@ -110,7 +107,7 @@ function TablePhong({
         }
     };
 
-    // Hiển thị danh sách giường
+   
     const hienThiGiuong = (phong: Phong) => {
         const phongCoDanhSachGiuong = phong as Phong & {
             danhSachGiuong?: Array<{
@@ -274,15 +271,6 @@ function TablePhong({
                                         {/* Thao tác */}
                                         <TableCell>
                                             <Stack direction="row" spacing={0.5}>
-                                                <Tooltip title="Xem chi tiết">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="info"
-                                                        onClick={() => onView(phong)}
-                                                    >
-                                                        <VisibilityOutlinedIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
 
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton

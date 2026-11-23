@@ -5,8 +5,9 @@ import ModalThemPhong from './ModalThemPhong';
 import { useHomeStay } from '../../../context/HomeStayContext';
 import type { Phong } from '../../../types/phong';
 import { toast } from '../../../utils/toast';
-import { showAllPhong } from '../../../services/phongService';
+import { showAllPhong, xoaPhong } from '../../../services/phongService';
 import TablePhong from './TablePhong';
+import Swal from 'sweetalert2';
 
 function QuanLyPhong() {
     const [open, setOpen] = useState(false);
@@ -14,16 +15,17 @@ function QuanLyPhong() {
         homeStayDangChon
     } = useHomeStay();
     const [danhSachPhong, setDanhSachPhong] = useState<Phong[]>([]);
+    const [updatePhong, setUpdatePhong] = useState<Phong | null>(null);
 
-    // Trạng thái loading
+
     const [loading, setLoading] = useState(false);
 
-    // Phân trang
+
     const [trang, setTrang] = useState(0);
     const [kichThuoc, setKichThuoc] = useState(5);
     const [tongSoBanGhi, setTongSoBanGhi] = useState(0);
 
-    // Lấy danh sách phòng
+
     const layDanhSachPhong = async () => {
         try {
             setLoading(true);
@@ -31,7 +33,7 @@ function QuanLyPhong() {
             const response = await showAllPhong(trang, kichThuoc);
 
             setDanhSachPhong(response.content);
-            setTongSoBanGhi(response.content.length);
+            setTongSoBanGhi(response.page.totalElements);
 
         } catch (error) {
             console.error("Lỗi lấy danh sách phòng:", error);
@@ -45,34 +47,65 @@ function QuanLyPhong() {
         layDanhSachPhong();
     }, [trang, kichThuoc]);
 
-    // Chuyển trang
+
     const handleChangePage = (trangMoi: number) => {
         setTrang(trangMoi);
     };
 
-    // Thay đổi số dòng
+
     const handleChangeRowsPerPage = (kichThuocMoi: number) => {
         setKichThuoc(kichThuocMoi);
         setTrang(0);
     };
 
-    // Xem chi tiết
-    const handleView = (phong: Phong) => {
-        console.log("Xem phòng:", phong);
-    };
 
-    // Chỉnh sửa
+
+
     const handleEdit = (phong: Phong) => {
-        console.log("Sửa phòng:", phong);
+        setUpdatePhong(phong);
+        setOpen(true);
     };
 
-    // Xóa
-    const handleDelete = (phong: Phong) => {
-        console.log("Xóa phòng:", phong);
-    };
 
+    const handleDelete = async (phong: Phong) => {
+        const result = await Swal.fire({
+            title: "Xác nhận xóa phòng?",
+            text: `Bạn có chắc chắn muốn xóa ${phong.tenPhong} không?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Xóa phòng",
+            cancelButtonText: "Hủy",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#64748b",
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            setLoading(true);
+
+            await xoaPhong(phong.id);
+
+            toast.success("Xóa phòng thành công!");
+
+            if (danhSachPhong.length === 1 && trang > 0) {
+                setTrang(prev => prev - 1);
+            } else {
+                await layDanhSachPhong();
+            }
+
+        } catch (error: any) {
+            console.error("Lỗi xóa phòng:", error);
+            toast.error(
+                error.response?.data || "Xóa phòng thất bại!"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleClickOpen = () => {
+        setUpdatePhong(null)
         setOpen(true);
     }
     return (
@@ -109,25 +142,28 @@ function QuanLyPhong() {
                 </Button>
             </Stack>
 
-            <TablePhong
-                danhSachPhong={danhSachPhong}
-                loading={loading}
-                trang={trang}
-                kichThuoc={kichThuoc}
-                tongSoBanGhi={tongSoBanGhi}
-                onChangePage={handleChangePage}
-                onChangeRowsPerPage={handleChangeRowsPerPage}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-            />
-
             {typeof homeStayDangChon === "number" && (
-                <ModalThemPhong
-                    open={open}
-                    onClose={() => setOpen(false)}
-                    maHomeStay={homeStayDangChon}
-                />
+                <>
+                    <TablePhong
+                        danhSachPhong={danhSachPhong}
+                        loading={loading}
+                        trang={trang}
+                        kichThuoc={kichThuoc}
+                        tongSoBanGhi={tongSoBanGhi}
+                        onChangePage={handleChangePage}
+                        onChangeRowsPerPage={handleChangeRowsPerPage}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
+
+                    <ModalThemPhong
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        maHomeStay={homeStayDangChon}
+                        duLieuUpdate={updatePhong}
+                        onSuccess={layDanhSachPhong}
+                    />
+                </>
             )}
 
 
