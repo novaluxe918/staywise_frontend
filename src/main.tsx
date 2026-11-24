@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material'
 import { HomeStayProvider } from './context/HomeStayContext.tsx'
+import { PhongProvider } from './context/PhongContext.tsx'
 
 
 const theme = createTheme({
@@ -21,11 +22,12 @@ createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
                 <AuthProvider>
                     <HomeStayProvider>
-                        <App />
+                        <PhongProvider>
+                            <App />
+                        </PhongProvider>
                     </HomeStayProvider>
                 </AuthProvider>
             </BrowserRouter>
-
         </ThemeProvider>
     </StrictMode>,
 )

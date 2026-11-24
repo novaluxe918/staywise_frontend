@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Box, Button, TextField, Typography, IconButton,
@@ -13,21 +13,22 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-interface PhongOption {
-    id: number;
-    tenPhong: string;
-}
+import type { GiaPhong, GiaPhongRequest } from "../../../types/giaPhong";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    giaPhongSchema,
+    type GiaPhongFormData
+} from "../../../schemas/giaPhongSchema";
+import type { PhongOption } from "../../../types/phong";
 
 interface Props {
     open: boolean;
     onClose: () => void;
     danhSachPhong: PhongOption[];
-    onSubmit: (data: {
-        maPhong: number;
-        giaPhong: number;
-        ngayBatDau: string;
-        ngayKetThuc: string;
-    }) => Promise<void>;
+    onSubmit: (data: GiaPhongRequest) => Promise<void>;
+    duLieuUpdate: GiaPhong | null;
+
 }
 
 const GREEN = "#15803D";
@@ -70,61 +71,64 @@ function FieldLabel({ children, icon }: {
 }
 
 function ModalThemGiaPhong({
-    open, onClose, danhSachPhong, onSubmit
+    open, onClose, danhSachPhong, onSubmit, duLieuUpdate
 }: Props) {
 
-    const [maPhong, setMaPhong] = useState<number | "">("");
-    const [giaPhong, setGiaPhong] = useState("");
-    const [ngayBatDau, setNgayBatDau] = useState("");
-    const [ngayKetThuc, setNgayKetThuc] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const {
+        register,
+        handleSubmit,
+        reset,
+        watch,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm<GiaPhongFormData>({
+        resolver: zodResolver(giaPhongSchema),
+        defaultValues: {
+            maPhong: undefined,
+            giaPhong: undefined,
+            ngayBatDau: "",
+            ngayKetThuc: "",
+        },
+    });
 
-    const resetForm = () => {
-        setMaPhong("");
-        setGiaPhong("");
-        setNgayBatDau("");
-        setNgayKetThuc("");
-        setError("");
-    };
+    useEffect(() => {
+        if (!open) return;
+
+        if (duLieuUpdate) {
+            reset({
+                maPhong: duLieuUpdate.maPhong,
+                giaPhong: duLieuUpdate.giaPhong,
+                ngayBatDau: duLieuUpdate.ngayBatDau?.slice(0, 16) ?? "",
+                ngayKetThuc: duLieuUpdate.ngayKetThuc?.slice(0, 16) ?? "",
+            });
+        } else {
+            reset({
+                maPhong: undefined,
+                giaPhong: undefined,
+                ngayBatDau: "",
+                ngayKetThuc: "",
+            });
+        }
+    }, [open, duLieuUpdate, reset]);
 
     const handleClose = () => {
-        resetForm();
+        reset();
         onClose();
     };
 
-    const handleSubmit = async () => {
-        if (!maPhong || !giaPhong || !ngayBatDau || !ngayKetThuc) {
-            setError("Vui lòng nhập đầy đủ thông tin");
-            return;
-        }
-
-        if (Number(giaPhong) <= 0) {
-            setError("Giá phòng phải lớn hơn 0");
-            return;
-        }
-
-        if (new Date(ngayKetThuc) <= new Date(ngayBatDau)) {
-            setError("Ngày kết thúc phải sau ngày bắt đầu");
-            return;
-        }
-
+    const onFormSubmit = async (data: GiaPhongFormData) => {
         try {
-            setLoading(true);
-            setError("");
-
             await onSubmit({
-                maPhong: Number(maPhong),
-                giaPhong: Number(giaPhong),
-                ngayBatDau: ngayBatDau + ":00",
-                ngayKetThuc: ngayKetThuc + ":00"
+                id: duLieuUpdate?.id,
+                maPhong: data.maPhong,
+                giaPhong: data.giaPhong,
+                ngayBatDau: data.ngayBatDau + ":00",
+                ngayKetThuc: data.ngayKetThuc + ":00",
             });
 
             handleClose();
         } catch (error) {
-            console.error("Lỗi thêm giá phòng:", error);
-        } finally {
-            setLoading(false);
+            console.error("Lỗi lưu giá phòng:", error);
         }
     };
 
@@ -144,7 +148,6 @@ function ModalThemGiaPhong({
                 }
             }}
         >
-            {/* HEADER */}
             <DialogTitle sx={{
                 background: "linear-gradient(120deg, #14532D, #15803D, #22A052)",
                 color: "#fff",
@@ -162,10 +165,12 @@ function ModalThemGiaPhong({
 
                     <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: 21, fontWeight: 750 }}>
-                            Thêm giá phòng
+                            {duLieuUpdate ? "Cập nhật giá phòng" : "Thêm giá phòng"}
                         </Typography>
                         <Typography sx={{ fontSize: 12.5, opacity: 0.85 }}>
-                            Thiết lập mức giá áp dụng cho phòng
+                            {duLieuUpdate
+                                ? "Điều chỉnh thông tin và mức giá áp dụng cho phòng"
+                                : "Thiết lập mức giá áp dụng cho phòng"}
                         </Typography>
                     </Box>
 
@@ -175,7 +180,6 @@ function ModalThemGiaPhong({
                 </Box>
             </DialogTitle>
 
-            {/* CONTENT */}
             <DialogContent sx={{ p: 3, bgcolor: "#FCFFFC" }}>
                 <Stack spacing={2.5}>
 
@@ -190,11 +194,17 @@ function ModalThemGiaPhong({
                         </FieldLabel>
 
                         <TextField
-                            select fullWidth sx={inputStyle}
-                            value={maPhong}
-                            onChange={e => setMaPhong(
-                                e.target.value === "" ? "" : Number(e.target.value)
+                            select
+                            fullWidth
+                            sx={inputStyle}
+                            value={watch("maPhong") ?? ""}
+                            onChange={e => setValue(
+                                "maPhong",
+                                e.target.value === "" ? undefined as never : Number(e.target.value),
+                                { shouldValidate: true, shouldDirty: true }
                             )}
+                            error={!!errors.maPhong}
+                            helperText={errors.maPhong?.message}
                             slotProps={{ select: { displayEmpty: true } }}
                         >
                             <MenuItem value="" disabled>
@@ -222,10 +232,12 @@ function ModalThemGiaPhong({
                         </FieldLabel>
 
                         <TextField
-                            fullWidth type="number"
+                            fullWidth
+                            type="number"
                             placeholder="Nhập giá phòng"
-                            value={giaPhong}
-                            onChange={e => setGiaPhong(e.target.value)}
+                            {...register("giaPhong", { valueAsNumber: true })}
+                            error={!!errors.giaPhong}
+                            helperText={errors.giaPhong?.message}
                             sx={inputStyle}
                             slotProps={{
                                 htmlInput: { min: 1 },
@@ -262,9 +274,11 @@ function ModalThemGiaPhong({
                             <Box>
                                 <FieldLabel icon={<></>}>Ngày bắt đầu</FieldLabel>
                                 <TextField
-                                    fullWidth type="datetime-local"
-                                    value={ngayBatDau}
-                                    onChange={e => setNgayBatDau(e.target.value)}
+                                    fullWidth
+                                    type="datetime-local"
+                                    {...register("ngayBatDau")}
+                                    error={!!errors.ngayBatDau}
+                                    helperText={errors.ngayBatDau?.message}
                                     sx={inputStyle}
                                 />
                             </Box>
@@ -272,9 +286,11 @@ function ModalThemGiaPhong({
                             <Box>
                                 <FieldLabel icon={<></>}>Ngày kết thúc</FieldLabel>
                                 <TextField
-                                    fullWidth type="datetime-local"
-                                    value={ngayKetThuc}
-                                    onChange={e => setNgayKetThuc(e.target.value)}
+                                    fullWidth
+                                    type="datetime-local"
+                                    {...register("ngayKetThuc")}
+                                    error={!!errors.ngayKetThuc}
+                                    helperText={errors.ngayKetThuc?.message}
                                     sx={inputStyle}
                                 />
                             </Box>
@@ -300,22 +316,15 @@ function ModalThemGiaPhong({
                         </Box>
                     </Paper>
 
-                    {error && (
-                        <Typography sx={{ color: "error.main", fontSize: 13 }}>
-                            {error}
-                        </Typography>
-                    )}
-
                 </Stack>
             </DialogContent>
 
             <Divider sx={{ borderColor: "#E5F0E7" }} />
 
-            {/* FOOTER */}
             <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
                 <Button
                     onClick={handleClose}
-                    disabled={loading}
+                    disabled={isSubmitting}
                     sx={{ color: "#64748B", textTransform: "none" }}
                 >
                     Hủy
@@ -323,8 +332,8 @@ function ModalThemGiaPhong({
 
                 <Button
                     variant="contained"
-                    onClick={handleSubmit}
-                    disabled={loading || danhSachPhong.length === 0}
+                    onClick={handleSubmit(onFormSubmit)}
+                    disabled={isSubmitting || danhSachPhong.length === 0}
                     startIcon={<SaveOutlinedIcon />}
                     sx={{
                         background: "linear-gradient(135deg, #15803D, #16A34A)",
@@ -337,7 +346,11 @@ function ModalThemGiaPhong({
                         "&:hover": { bgcolor: "#166534" }
                     }}
                 >
-                    {loading ? "Đang lưu..." : "Thêm giá phòng"}
+                    {isSubmitting
+                        ? "Đang lưu..."
+                        : duLieuUpdate
+                            ? "Cập nhật"
+                            : "Thêm giá phòng"}
                 </Button>
             </DialogActions>
         </Dialog>

@@ -5,3 +5,12 @@ export interface GiaPhongRequest {
     ngayBatDau?: string;
     ngayKetThuc?: string;
 }
+
+export interface GiaPhong {
+    id: number;
+    maPhong: number;
+    tenPhong: string;
+    giaPhong: number;
+    ngayBatDau: string;
+    ngayKetThuc: string;
+}

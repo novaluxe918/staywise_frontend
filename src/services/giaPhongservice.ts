@@ -1,5 +1,5 @@
-import type { GiaPhongRequest } from "../types/giaPhong";
-import api from "./api";
+import type { GiaPhong, GiaPhongRequest } from "../types/giaPhong";
+import api, { type PageResponse } from "./api";
 
 export const saveGiaPhong = async (data: GiaPhongRequest) => {
     const formData = new FormData();
@@ -29,5 +29,28 @@ export const saveGiaPhong = async (data: GiaPhongRequest) => {
         formData
     );
 
+    return response.data;
+};
+
+export const showAllGiaPhong = async (
+    tuKhoa: string,
+    trang: number,
+    kichThuoc: number
+): Promise<PageResponse<GiaPhong>> => {
+
+    const response = await api.get("/giaPhong/show-all", {
+        params: {
+            tuKhoa,
+            trang,
+            kichThuoc,
+        },
+    });
+
+    return response.data;
+};
+
+
+export const deleteGiaPhong = async (id: number): Promise<string> => {
+    const response = await api.delete(`/giaphong/xoa/${id}`);
     return response.data;
 };

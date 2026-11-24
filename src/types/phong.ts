@@ -115,3 +115,8 @@ export const danhSachTheLoaiNguoi: {
             label: "Trẻ em",
         },
     ];
+
+   export interface PhongOption {
+    id: number;
+    tenPhong: string;
+}

@@ -124,8 +124,6 @@ function ModalThemPhong({
         });
     }, [open, duLieuUpdate, reset]);
 
-    // ==================== LOAD BEDS ====================
-
     useEffect(() => {
         if (!open) return;
 
