@@ -11,6 +11,7 @@ import {
   ChevronRight,
   MessageCircle,
   BedIcon,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ const menus = [
       { name: "Tổng quan", path: "/tong-quan", icon: LayoutDashboard },
       { name: "Quản lý Phòng", path: "/quan-ly-phong", icon: BedDouble },
       { name: "Bảng giá & Mùa vụ", path: "/gia-phong", icon: CalendarDays },
+      { name: " Dự đoán giá", path: "/du-doan-gia", icon: Sparkles },
       { name: "Quản lý Đặt phòng", path: "/quan-ly-dat-phong", icon: CalendarCheck },
       { name: "Quản lý Giường", path: "/giuong", icon: BedIcon },
     ],
