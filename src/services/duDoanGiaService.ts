@@ -24,3 +24,13 @@ export const duDoanGia = async (request: DuDoanGiaRequest): Promise<DuDoanGiaRes
 
 
 }
+
+export const getLichSuDoanGia =  async (
+    maHomeStay: number
+): Promise<LichSuDoanGia[]> => {
+    const response = await api.get("/du-doan-gia/lich-su", {
+        params: { maHomeStay },
+    });
+
+    return response.data;
+};

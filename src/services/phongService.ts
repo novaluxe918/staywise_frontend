@@ -48,12 +48,14 @@ export const savePhong = async (data: PhongRequest) => {
 
 export const showAllPhong = async (
     trang: number,
-    kichThuoc: number
+    kichThuoc: number,
+    maHomeStay?: number
 ): Promise<PageResponse<Phong>> => {
     const response = await api.get("/phong/timKiem", {
         params: {
             trang,
             kichThuoc,
+            maHomeStay,
         },
     });
 

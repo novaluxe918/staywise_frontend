@@ -15,32 +15,59 @@ import {
     Sparkles,
     Calendar,
     BarChart3,
-    History,
-    ArrowUpRight,
-    Info,
 } from "lucide-react";
 
 import FormDuDoanGia from "./FormDuDoanGia";
 import type { PhongOption } from "../../../types/phong";
 import { showAllPhong } from "../../../services/phongService";
-import type { DuDoanGiaResponse } from "../../../types/duDoanGia";
-import { duDoanGia } from "../../../services/duDoanGiaService";
+import type { DuDoanGiaResponse, LichSuDoanGia } from "../../../types/duDoanGia";
+import { duDoanGia, getLichSuDoanGia } from "../../../services/duDoanGiaService";
 import KetQuaDuDoanGia from "./KetQuaDuDoanGia";
+import BangLichSuDuDoanGia from "./BangLichSuDuDoanGia";
+import { useHomeStay } from "../../../context/HomeStayContext";
 
 const DuDoanGia: React.FC = () => {
+
+    const {
+        homeStayDangChon,
+        dangTaiHomeStay,
+    } = useHomeStay();
 
     const [danhSachPhong, setDanhSachPhong] = useState<PhongOption[]>([]);
     const [loadingPhong, setLoadingPhong] = useState(false);
     const [ketQuaDuDoan, setKetQuaDuDoan] =
         useState<DuDoanGiaResponse | null>(null);
     const [loadingDuDoan, setLoadingDuDoan] = useState(false);
+    const [lichSu, setLichSu] = useState<LichSuDoanGia[]>([]);
+    const [loadingLichSu, setLoadingLichSu] = useState(false);
 
     useEffect(() => {
-        const fetchDanhSachPhong = async () => {
+        let isMounted = true;
+
+        const fetchDuLieu = async () => {
+            if (!homeStayDangChon) {
+                setDanhSachPhong([]);
+                setLichSu([]);
+                setKetQuaDuDoan(null);
+                setLoadingPhong(false);
+                setLoadingLichSu(false);
+                return;
+            }
+
+            setDanhSachPhong([]);
+            setLichSu([]);
+            setKetQuaDuDoan(null);
+
             try {
                 setLoadingPhong(true);
+                setLoadingLichSu(true);
 
-                const response = await showAllPhong(0, 100);
+                const [response, data] = await Promise.all([
+                    showAllPhong(0, 100, homeStayDangChon),
+                    getLichSuDoanGia(homeStayDangChon),
+                ]);
+
+                if (!isMounted) return;
 
                 setDanhSachPhong(
                     response.content.map((phong) => ({
@@ -48,22 +75,42 @@ const DuDoanGia: React.FC = () => {
                         tenPhong: phong.tenPhong,
                     }))
                 );
+
+                setLichSu(data);
+
             } catch (error) {
-                console.error("Lỗi lấy danh sách phòng:", error);
+                console.error("Lỗi tải dữ liệu dự đoán:", error);
+
+                if (isMounted) {
+                    setDanhSachPhong([]);
+                    setLichSu([]);
+                }
             } finally {
-                setLoadingPhong(false);
+                if (isMounted) {
+                    setLoadingPhong(false);
+                    setLoadingLichSu(false);
+                }
             }
         };
 
-        fetchDanhSachPhong();
-    }, []);
+        fetchDuLieu();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [homeStayDangChon]);
 
     const handleDuDoan = async (data: {
         maPhong: string;
         ngayApDung: string;
     }) => {
+        if (!homeStayDangChon) {
+            return;
+        }
+
         try {
             setLoadingDuDoan(true);
+            setKetQuaDuDoan(null);
 
             const ketQua = await duDoanGia({
                 maPhong: Number(data.maPhong),
@@ -219,45 +266,49 @@ const DuDoanGia: React.FC = () => {
 
                         <Divider sx={{ my: 2.5, borderColor: "#F1F5F9" }} />
 
-                        <FormDuDoanGia onSubmit={handleDuDoan} danhSachPhong={danhSachPhong} loading={loadingDuDoan} />
+                        <FormDuDoanGia
+                            onSubmit={handleDuDoan}
+                            danhSachPhong={danhSachPhong}
+                            loading={loadingDuDoan || loadingPhong || dangTaiHomeStay}
+                        />
                     </Paper>
 
-            
-                        {/* KẾT QUẢ */}
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                ...cardStyle,
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                        >
-                            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                                <Box
-                                    sx={{
-                                        ...iconStyle,
-                                        bgcolor: alpha("#4F46E5", 0.08),
-                                        color: "#4F46E5",
-                                    }}
-                                >
-                                    <BarChart3 size={20} />
-                                </Box>
 
-                                <Box>
-                                    <Typography sx={{ fontWeight: 600, fontSize: "1.05rem" }}>
-                                        Mức giá đề xuất
-                                    </Typography>
+                    {/* KẾT QUẢ */}
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            ...cardStyle,
+                            display: "flex",
+                            flexDirection: "column",
+                        }}
+                    >
+                        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                            <Box
+                                sx={{
+                                    ...iconStyle,
+                                    bgcolor: alpha("#4F46E5", 0.08),
+                                    color: "#4F46E5",
+                                }}
+                            >
+                                <BarChart3 size={20} />
+                            </Box>
 
-                                    <Typography sx={{ fontSize: "0.825rem", color: "#64748B" }}>
-                                        So sánh giá hiện tại với giá AI dự đoán
-                                    </Typography>
-                                </Box>
-                            </Stack>
+                            <Box>
+                                <Typography sx={{ fontWeight: 600, fontSize: "1.05rem" }}>
+                                    Mức giá đề xuất
+                                </Typography>
 
-                            <Divider sx={{ my: 2.5, borderColor: "#F1F5F9" }} />
+                                <Typography sx={{ fontSize: "0.825rem", color: "#64748B" }}>
+                                    So sánh giá hiện tại với giá AI dự đoán
+                                </Typography>
+                            </Box>
+                        </Stack>
 
-                            <KetQuaDuDoanGia ketQua={ketQuaDuDoan} />
-                        </Paper>
+                        <Divider sx={{ my: 2.5, borderColor: "#F1F5F9" }} />
+
+                        <KetQuaDuDoanGia ketQua={ketQuaDuDoan} />
+                    </Paper>
 
                 </Box>
 
@@ -269,66 +320,11 @@ const DuDoanGia: React.FC = () => {
                         mt: 3,
                     }}
                 >
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1}
-                        sx={{
-                            justifyContent: "space-between",
-                            alignItems: { xs: "flex-start", sm: "center" },
-                        }}
-                    >
-                        <Stack
-                            direction="row"
-                            spacing={1.5}
-                            sx={{ alignItems: "center" }}
-                        >
-                            <Box sx={iconStyle}>
-                                <History size={20} />
-                            </Box>
 
-                            <Box>
-                                <Typography sx={{ fontWeight: 600, fontSize: "1.05rem" }}>
-                                    Lịch sử dự đoán
-                                </Typography>
-
-                                <Typography sx={{ fontSize: "0.825rem", color: "#64748B" }}>
-                                    Theo dõi những lần dự đoán giá trước đó
-                                </Typography>
-                            </Box>
-                        </Stack>
-
-                        <Stack
-                            direction="row"
-                            spacing={0.75}
-                            sx={{ alignItems: "center", color: "#64748B" }}
-                        >
-                            <Info size={15} />
-
-                            <Typography sx={{ fontSize: "0.8rem" }}>
-                                Giá đề xuất chỉ mang tính chất tham khảo
-                            </Typography>
-                        </Stack>
-                    </Stack>
-
-                    <Divider sx={{ my: 2.5, borderColor: "#F1F5F9" }} />
-
-                    <Box
-                        sx={{
-                            py: 5,
-                            px: 2,
-                            borderRadius: 3,
-                            bgcolor: "#F8FAFC",
-                            textAlign: "center",
-                        }}
-                    >
-                        <Typography sx={{ fontSize: "0.9rem", fontWeight: 500, color: "#475569" }}>
-                            Chưa có lịch sử dự đoán
-                        </Typography>
-
-                        <Typography sx={{ fontSize: "0.825rem", color: "#94A3B8", mt: 0.5 }}>
-                            Các lần dự đoán sẽ được lưu lại tại đây.
-                        </Typography>
-                    </Box>
+                    <BangLichSuDuDoanGia
+                        lichSu={lichSu}
+                        loading={loadingLichSu}
+                    />
                 </Paper>
 
             </Container>

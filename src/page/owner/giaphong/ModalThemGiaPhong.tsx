@@ -28,6 +28,7 @@ interface Props {
     danhSachPhong: PhongOption[];
     onSubmit: (data: GiaPhongRequest) => Promise<void>;
     duLieuUpdate: GiaPhong | null;
+    loadingPhong: boolean;
 
 }
 
@@ -71,7 +72,7 @@ function FieldLabel({ children, icon }: {
 }
 
 function ModalThemGiaPhong({
-    open, onClose, danhSachPhong, onSubmit, duLieuUpdate
+    open, onClose, danhSachPhong, onSubmit, duLieuUpdate, loadingPhong
 }: Props) {
 
     const {
@@ -197,6 +198,7 @@ function ModalThemGiaPhong({
                             select
                             fullWidth
                             sx={inputStyle}
+                            disabled={loadingPhong}
                             value={watch("maPhong") ?? ""}
                             onChange={e => setValue(
                                 "maPhong",
@@ -204,7 +206,11 @@ function ModalThemGiaPhong({
                                 { shouldValidate: true, shouldDirty: true }
                             )}
                             error={!!errors.maPhong}
-                            helperText={errors.maPhong?.message}
+                            helperText={
+                                loadingPhong
+                                    ? "Đang tải danh sách phòng..."
+                                    : errors.maPhong?.message
+                            }
                             slotProps={{ select: { displayEmpty: true } }}
                         >
                             <MenuItem value="" disabled>
@@ -218,7 +224,7 @@ function ModalThemGiaPhong({
                             ))}
                         </TextField>
 
-                        {danhSachPhong.length === 0 && (
+                        {!loadingPhong && danhSachPhong.length === 0 && (
                             <Typography color="warning.main" sx={{ fontSize: 12, mt: 1 }}>
                                 Chưa có phòng nào được tạo.
                             </Typography>

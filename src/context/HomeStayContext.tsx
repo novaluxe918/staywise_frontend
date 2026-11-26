@@ -4,12 +4,13 @@ import {
     useContext,
     useEffect,
     useState,
+    useCallback,
     type ReactNode,
 } from "react";
 
 import type { HomeStayOption } from "../types/homestay";
 import { layDanhSachHomeStayDaDuyet } from "../services/homestayService";
-import { useAuth } from "./AuthContext"; // Sửa đường dẫn nếu cần
+import { useAuth } from "./AuthContext";
 
 interface HomeStayContextType {
     danhSachHomeStay: HomeStayOption[];
@@ -28,7 +29,6 @@ interface Props {
 }
 
 export const HomeStayProvider = ({ children }: Props) => {
-
     const { nguoiDung } = useAuth();
 
     const [danhSachHomeStay, setDanhSachHomeStay] =
@@ -39,8 +39,13 @@ export const HomeStayProvider = ({ children }: Props) => {
 
     const [dangTaiHomeStay, setDangTaiHomeStay] = useState(false);
 
-    // Tải danh sách HomeStay
-    const taiLaiDanhSachHomeStay = async () => {
+    const taiLaiDanhSachHomeStay = useCallback(async () => {
+        if (!nguoiDung?.id) {
+            setDanhSachHomeStay([]);
+            setHomeStayDangChon("");
+            return;
+        }
+
         try {
             setDangTaiHomeStay(true);
 
@@ -53,40 +58,38 @@ export const HomeStayProvider = ({ children }: Props) => {
                     (item) => item.id === current
                 );
 
-                if (conHopLe) return current;
-
-                return data.length > 0 ? data[0].id : "";
+                return conHopLe
+                    ? current
+                    : data.length > 0
+                        ? data[0].id
+                        : "";
             });
 
         } catch (error) {
             console.error("Lỗi lấy danh sách HomeStay:", error);
+
             setDanhSachHomeStay([]);
             setHomeStayDangChon("");
+
         } finally {
             setDangTaiHomeStay(false);
         }
-    };
-
+    }, [nguoiDung?.id]);
 
     useEffect(() => {
         let isMounted = true;
 
         const taiDanhSach = async () => {
+            setDanhSachHomeStay([]);
+            setHomeStayDangChon("");
 
-        
             if (!nguoiDung?.id) {
-                setDanhSachHomeStay([]);
-                setHomeStayDangChon("");
                 setDangTaiHomeStay(false);
                 return;
             }
 
             try {
                 setDangTaiHomeStay(true);
-
-              
-                setDanhSachHomeStay([]);
-                setHomeStayDangChon("");
 
                 const data = await layDanhSachHomeStayDaDuyet();
 

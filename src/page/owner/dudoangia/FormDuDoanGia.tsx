@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     Box,
     Button,
@@ -15,6 +15,9 @@ import {
     duDoanGiaSchema,
     type DuDoanGiaFormData,
 } from "../../../schemas/duDoanGiaSchema";
+import type { GiaPhongTheoPhong } from "../../../types/giaPhong";
+import { getGiaPhongByMaPhong } from "../../../services/giaPhongservice";
+
 
 interface Props {
     danhSachPhong?: { id: number; tenPhong: string }[];
@@ -27,18 +30,104 @@ const FormDuDoanGia: React.FC<Props> = ({
     onSubmit,
     loading = false,
 }) => {
-    const { control, handleSubmit, formState: { errors } } =
-        useForm<DuDoanGiaFormData>({
-            resolver: zodResolver(duDoanGiaSchema),
-            defaultValues: {
-                maPhong: "",
-                ngayApDung: "",
-            },
-        });
+    const {
+        control,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors },
+    } = useForm<DuDoanGiaFormData>({
+        resolver: zodResolver(duDoanGiaSchema),
+        defaultValues: {
+            maPhong: "",
+            ngayApDung: "",
+        },
+    });
+
+    const maPhong = watch("maPhong");
+
+
+    const [danhSachKhoangGia, setDanhSachKhoangGia] =
+        useState<GiaPhongTheoPhong[]>([]);
+
+   
+    const [loadingNgay, setLoadingNgay] = useState(false);
+
+    useEffect(() => {
+        const fetchGiaPhong = async () => {
+            setValue("ngayApDung", "");
+
+            if (!maPhong) {
+                setDanhSachKhoangGia([]);
+                return;
+            }
+
+            try {
+                setLoadingNgay(true);
+
+                const data = await getGiaPhongByMaPhong(
+                    Number(maPhong)
+                );
+
+                setDanhSachKhoangGia(data);
+            } catch (error) {
+                console.error("Lỗi lấy khoảng giá phòng:", error);
+                setDanhSachKhoangGia([]);
+            } finally {
+                setLoadingNgay(false);
+            }
+        };
+
+        fetchGiaPhong();
+    }, [maPhong, setValue]);
+
+    
+    const danhSachNgay = Array.from(
+        new Set(
+            danhSachKhoangGia.flatMap((gia) => {
+                const ngayBatDau = new Date(gia.ngayBatDau);
+                const ngayKetThuc = new Date(gia.ngayKetThuc);
+
+                const ngay = new Date(
+                    ngayBatDau.getFullYear(),
+                    ngayBatDau.getMonth(),
+                    ngayBatDau.getDate()
+                );
+
+                const ngayCuoi = new Date(
+                    ngayKetThuc.getFullYear(),
+                    ngayKetThuc.getMonth(),
+                    ngayKetThuc.getDate()
+                );
+
+                const cacNgay: string[] = [];
+
+                while (ngay <= ngayCuoi) {
+                    const nam = ngay.getFullYear();
+                    const thang = String(
+                        ngay.getMonth() + 1
+                    ).padStart(2, "0");
+
+                    const ngayTrongThang = String(
+                        ngay.getDate()
+                    ).padStart(2, "0");
+
+                    cacNgay.push(
+                        `${nam}-${thang}-${ngayTrongThang}`
+                    );
+
+                    ngay.setDate(ngay.getDate() + 1);
+                }
+
+                return cacNgay;
+            })
+        )
+    ).sort();
 
     return (
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <Stack spacing={2.5}>
+                {/* CHỌN PHÒNG */}
                 <Controller
                     name="maPhong"
                     control={control}
@@ -69,29 +158,53 @@ const FormDuDoanGia: React.FC<Props> = ({
                     )}
                 />
 
+                {/* CHỌN NGÀY ÁP DỤNG */}
                 <Controller
                     name="ngayApDung"
                     control={control}
                     render={({ field }) => (
                         <TextField
                             {...field}
+                            select
                             fullWidth
                             size="small"
-                            type="date"
-                            label="Ngày áp dụng giá"
-                            slotProps={{
-                                inputLabel: { shrink: true },
-                            }}
+                            label="Chọn ngày áp dụng giá"
+                            disabled={
+                                !maPhong ||
+                                loadingNgay ||
+                                danhSachNgay.length === 0
+                            }
                             error={!!errors.ngayApDung}
-                            helperText={errors.ngayApDung?.message}
-                        />
+                            helperText={
+                                errors.ngayApDung?.message ||
+                                (loadingNgay
+                                    ? "Đang tải ngày áp dụng..."
+                                    : !maPhong
+                                        ? "Vui lòng chọn phòng trước"
+                                        : danhSachNgay.length === 0
+                                            ? "Phòng chưa có lịch áp dụng giá"
+                                            : `${danhSachNgay.length} ngày có thể áp dụng giá`)
+                            }
+                        >
+                            {danhSachNgay.map((ngay) => (
+                                <MenuItem
+                                    key={ngay}
+                                    value={ngay}
+                                >
+                                    {new Date(
+                                        `${ngay}T00:00:00`
+                                    ).toLocaleDateString("vi-VN")}
+                                </MenuItem>
+                            ))}
+                        </TextField>
                     )}
                 />
 
+                {/* NÚT DỰ ĐOÁN */}
                 <Button
                     type="submit"
                     variant="contained"
-                    disabled={loading}
+                    disabled={loading || loadingNgay}
                     startIcon={<Sparkles size={18} />}
                     sx={{
                         py: 1.3,
@@ -106,7 +219,9 @@ const FormDuDoanGia: React.FC<Props> = ({
                         },
                     }}
                 >
-                    {loading ? "Đang phân tích..." : "Dự đoán giá phòng"}
+                    {loading
+                        ? "Đang phân tích..."
+                        : "Dự đoán giá phòng"}
                 </Button>
             </Stack>
         </Box>

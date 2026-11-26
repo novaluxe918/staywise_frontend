@@ -14,3 +14,12 @@ export interface GiaPhong {
     ngayBatDau: string;
     ngayKetThuc: string;
 }
+
+export interface GiaPhongTheoPhong {
+    id: number;
+    maPhong: number;
+    tenPhong: string;
+    giaPhong: number;
+    ngayBatDau: string;
+    ngayKetThuc: string;
+}

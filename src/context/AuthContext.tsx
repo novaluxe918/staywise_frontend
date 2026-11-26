@@ -68,10 +68,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Lỗi đăng xuất:", err);
     } finally {
       Cookies.remove("user_info", { path: "/" });
+
+      Cookies.remove("token", { path: "/" });
+
+      localStorage.removeItem("token");
+
       setNguoiDung(null);
     }
   };
-
   return (
     <AuthContext.Provider value={{ nguoiDung, dangNhap, dangXuat, capNhatNguoiDung }}>
       {children}

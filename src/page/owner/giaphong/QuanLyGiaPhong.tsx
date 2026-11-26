@@ -18,8 +18,10 @@ import { toast } from '../../../utils/toast';
 import type { PageResponse } from '../../../services/api';
 import TableGiaPhong from './TableGiaPhong';
 import Swal from 'sweetalert2';
+import { useHomeStay } from '../../../context/HomeStayContext';
 
 function QuanLyGiaPhong() {
+    const { homeStayDangChon } = useHomeStay();
     const [open, setOpen] = useState(false);
     const [dataPage, setDataPage] = useState<PageResponse<GiaPhong> | null>(null);
     const [updateGiaPhong, setUpdateGiaPhong] = useState<GiaPhong | null>(null)
@@ -27,13 +29,17 @@ function QuanLyGiaPhong() {
     const [trang, setTrang] = useState(0);
     const [kichThuoc, setKichThuoc] = useState(5);
     const [loading, setLoading] = useState(false);
-    const { danhSachPhong } = usePhong();
-    const [reloadTrigger, setReloadTrigger] = useState(0);
+    const { danhSachPhong,
+        loadingPhong,
+        fetchDanhSachPhong } = usePhong();
 
-    const handleClickOpen = () => {
+    const handleClickOpen = async () => {
         setUpdateGiaPhong(null);
+
+        await fetchDanhSachPhong();
+
         setOpen(true);
-    }
+    };
     const handleClose = () => setOpen(false);
 
     const handleEdit = (item: GiaPhong) => {
@@ -42,17 +48,34 @@ function QuanLyGiaPhong() {
     };
 
     const fetchDanhSachGiaPhong = useCallback(async () => {
+        if (typeof homeStayDangChon !== "number") {
+            setDataPage(null);
+            return;
+        }
+
         try {
             setLoading(true);
-            const response = await showAllGiaPhong(tuKhoa, trang, kichThuoc);
+
+            const response = await showAllGiaPhong(
+                tuKhoa,
+                trang,
+                kichThuoc,
+                homeStayDangChon
+            );
+
             setDataPage(response);
         } catch (error) {
-            console.error('Lỗi lấy danh sách giá phòng:', error);
-            toast.error('Không thể tải danh sách giá phòng');
+            console.error("Lỗi lấy danh sách giá phòng:", error);
+            toast.error("Không thể tải danh sách giá phòng");
         } finally {
             setLoading(false);
         }
-    }, [tuKhoa, trang, kichThuoc]);
+    }, [tuKhoa, trang, kichThuoc, homeStayDangChon]);
+
+    useEffect(() => {
+        setTrang(0);
+        setDataPage(null);
+    }, [homeStayDangChon]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -65,16 +88,17 @@ function QuanLyGiaPhong() {
     const handleSubmit = async (data: GiaPhongRequest) => {
         try {
             const response = await saveGiaPhong(data);
+
             toast.success(response);
             handleClose();
-            fetchDanhSachGiaPhong(); // Reload lại bảng ngay sau khi thêm
+
+            await fetchDanhSachGiaPhong();
         } catch (error) {
-            console.error('Lỗi thêm giá phòng:', error);
-            toast.error('Thêm giá phòng thất bại');
+            console.error("Lỗi lưu giá phòng:", error);
+            toast.error("Lưu giá phòng thất bại");
             throw error;
         }
     };
-
     const handleSearch = (value: string) => {
         setTuKhoa(value);
         setTrang(0);
@@ -90,29 +114,30 @@ function QuanLyGiaPhong() {
     };
 
     const handleDelete = async (item: GiaPhong) => {
-    const result = await Swal.fire({
-        title: "Xóa giá phòng?",
-        text: `Bạn có chắc muốn xóa giá phòng của "${item.tenPhong}" không?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-        cancelButtonColor: "#64748b",
-    });
+        const result = await Swal.fire({
+            title: "Xóa giá phòng?",
+            text: `Bạn có chắc muốn xóa giá phòng của "${item.tenPhong}" không?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Xóa",
+            cancelButtonText: "Hủy",
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#64748b",
+        });
 
-    if (!result.isConfirmed) return;
+        if (!result.isConfirmed) return;
 
-    try {
-        const response = await deleteGiaPhong(item.id);
+        try {
+            const response = await deleteGiaPhong(item.id);
 
-        toast.success(response);
-        setReloadTrigger(prev => prev + 1);
-    } catch (error) {
-        console.error("Lỗi xóa giá phòng:", error);
-        toast.error("Xóa giá phòng thất bại");
-    }
-};
+            toast.success(response);
+
+            await fetchDanhSachGiaPhong();
+        } catch (error) {
+            console.error("Lỗi xóa giá phòng:", error);
+            toast.error("Xóa giá phòng thất bại");
+        }
+    };
 
     const tongSoBanGhi = dataPage?.page.totalElements ?? 0;
 
@@ -222,7 +247,8 @@ function QuanLyGiaPhong() {
                 onClose={handleClose}
                 danhSachPhong={danhSachPhong}
                 onSubmit={handleSubmit}
-                  duLieuUpdate={updateGiaPhong}
+                duLieuUpdate={updateGiaPhong}
+                  loadingPhong={loadingPhong}
             />
 
             <Paper

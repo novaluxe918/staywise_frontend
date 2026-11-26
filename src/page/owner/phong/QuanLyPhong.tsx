@@ -27,14 +27,23 @@ function QuanLyPhong() {
 
 
     const layDanhSachPhong = async () => {
+        if (typeof homeStayDangChon !== "number") {
+            setDanhSachPhong([]);
+            setTongSoBanGhi(0);
+            return;
+        }
+
         try {
             setLoading(true);
 
-            const response = await showAllPhong(trang, kichThuoc);
+            const response = await showAllPhong(
+                trang,
+                kichThuoc,
+                homeStayDangChon
+            );
 
             setDanhSachPhong(response.content);
             setTongSoBanGhi(response.page.totalElements);
-
         } catch (error) {
             console.error("Lỗi lấy danh sách phòng:", error);
             toast.error("Không thể tải danh sách phòng!");
@@ -42,11 +51,9 @@ function QuanLyPhong() {
             setLoading(false);
         }
     };
-
     useEffect(() => {
         layDanhSachPhong();
-    }, [trang, kichThuoc]);
-
+    }, [trang, kichThuoc, homeStayDangChon]);
 
     const handleChangePage = (trangMoi: number) => {
         setTrang(trangMoi);
