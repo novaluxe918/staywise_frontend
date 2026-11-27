@@ -43,6 +43,7 @@ export interface HomeStay {
   tienIchHienThi: string[];
   dichVuHienThi: string[];
   danhSachHinhAnh: HinhAnhHomeStay[];
+  giaThapNhat: number | null;
 }
 
 export interface AnhHomeStay {

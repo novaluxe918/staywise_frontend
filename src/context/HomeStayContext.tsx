@@ -5,6 +5,7 @@ import {
     useEffect,
     useState,
     useCallback,
+    useRef,
     type ReactNode,
 } from "react";
 
@@ -24,12 +25,10 @@ const HomeStayContext = createContext<HomeStayContextType | undefined>(
     undefined
 );
 
-interface Props {
-    children: ReactNode;
-}
-
-export const HomeStayProvider = ({ children }: Props) => {
+export const HomeStayProvider = ({ children }: { children: ReactNode }) => {
     const { nguoiDung } = useAuth();
+    const userId = nguoiDung?.id ?? null;
+    const email = nguoiDung?.email ?? null;
 
     const [danhSachHomeStay, setDanhSachHomeStay] =
         useState<HomeStayOption[]>([]);
@@ -39,90 +38,73 @@ export const HomeStayProvider = ({ children }: Props) => {
 
     const [dangTaiHomeStay, setDangTaiHomeStay] = useState(false);
 
+    const requestId = useRef(0);
+
     const taiLaiDanhSachHomeStay = useCallback(async () => {
-        if (!nguoiDung?.id) {
+        const currentRequest = ++requestId.current;
+        const currentUserId = userId;
+        const currentEmail = email;
+
+        if (currentUserId === null || currentEmail === null) {
             setDanhSachHomeStay([]);
             setHomeStayDangChon("");
+            setDangTaiHomeStay(false);
             return;
         }
 
-        try {
-            setDangTaiHomeStay(true);
+        // Xóa dữ liệu cũ trước khi tải dữ liệu mới
+        setDanhSachHomeStay([]);
+        setHomeStayDangChon("");
+        setDangTaiHomeStay(true);
 
+        try {
             const data = await layDanhSachHomeStayDaDuyet();
+
+            // Không nhận kết quả của request cũ
+            if (currentRequest !== requestId.current) {
+                return;
+            }
 
             setDanhSachHomeStay(data);
 
-            setHomeStayDangChon((current) => {
-                const conHopLe = data.some(
-                    (item) => item.id === current
-                );
-
-                return conHopLe
-                    ? current
-                    : data.length > 0
-                        ? data[0].id
-                        : "";
-            });
+            // Luôn chọn HomeStay thuộc danh sách vừa tải
+            setHomeStayDangChon(
+                data.length > 0 ? data[0].id : ""
+            );
 
         } catch (error) {
+            if (currentRequest !== requestId.current) {
+                return;
+            }
+
             console.error("Lỗi lấy danh sách HomeStay:", error);
 
             setDanhSachHomeStay([]);
             setHomeStayDangChon("");
 
         } finally {
-            setDangTaiHomeStay(false);
+            if (currentRequest === requestId.current) {
+                setDangTaiHomeStay(false);
+            }
         }
-    }, [nguoiDung?.id]);
+    }, [userId, email]);
 
     useEffect(() => {
-        let isMounted = true;
+        // Vô hiệu hóa tất cả request của tài khoản trước
+        requestId.current++;
 
-        const taiDanhSach = async () => {
-            setDanhSachHomeStay([]);
-            setHomeStayDangChon("");
+        setDanhSachHomeStay([]);
+        setHomeStayDangChon("");
+        setDangTaiHomeStay(false);
 
-            if (!nguoiDung?.id) {
-                setDangTaiHomeStay(false);
-                return;
-            }
-
-            try {
-                setDangTaiHomeStay(true);
-
-                const data = await layDanhSachHomeStayDaDuyet();
-
-                if (!isMounted) return;
-
-                setDanhSachHomeStay(data);
-
-                setHomeStayDangChon(
-                    data.length > 0 ? data[0].id : ""
-                );
-
-            } catch (error) {
-                if (!isMounted) return;
-
-                console.error("Lỗi lấy danh sách HomeStay:", error);
-
-                setDanhSachHomeStay([]);
-                setHomeStayDangChon("");
-
-            } finally {
-                if (isMounted) {
-                    setDangTaiHomeStay(false);
-                }
-            }
-        };
-
-        taiDanhSach();
+        if (userId !== null && email !== null) {
+            void taiLaiDanhSachHomeStay();
+        }
 
         return () => {
-            isMounted = false;
+            requestId.current++;
         };
-
-    }, [nguoiDung?.id]);
+    }, [userId, email, taiLaiDanhSachHomeStay]);
 
     return (
         <HomeStayContext.Provider

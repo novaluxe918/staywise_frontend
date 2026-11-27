@@ -58,3 +58,16 @@ export const layThongTinHomeStay = async(id: number): Promise<HomeStay>  => {
 
     return response.data;
 }
+
+export const layHomeStayTheoTheLoai = async (
+    theLoai: string
+): Promise<HomeStay[]> => {
+    const response = await api.get<HomeStay[]>(
+        "/homestay/the-loai",
+        {
+            params: { theLoai },
+        }
+    );
+
+    return response.data;
+}

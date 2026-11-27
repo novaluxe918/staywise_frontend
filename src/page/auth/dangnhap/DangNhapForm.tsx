@@ -21,12 +21,11 @@ import {
   LockKeyhole,
   Eye,
   EyeOff,
-  House,
   ArrowRight,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
-import { dangNhap } from "../../../services/authService";
+import { dangNhap as dangNhapAPI  } from "../../../services/authService";
 import { useAuth } from "../../../context/AuthContext";
 import type { VaiTro } from "../../../types/auth";
 
@@ -41,11 +40,11 @@ function DangNhapForm() {
   const navigate = useNavigate();
   const { dangNhap: capNhatAuth } = useAuth();
 
-  const handleSubmit = async (
+ 
+const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
-  ) => {
+) => {
     e.preventDefault();
-
 
     if (loading) return;
 
@@ -53,48 +52,46 @@ function DangNhapForm() {
     setLoading(true);
 
     try {
-      const data = await dangNhap({
-        email,
-        matKhau: password,
-      });
+        const data = await dangNhapAPI({
+            email,
+            matKhau: password,
+        });
 
-      capNhatAuth({
-        id: data.id,
-        email: data.email,
-        vaiTro: data.vaiTro,
-        hoTen: data.hoTen,
-        anhDaiDien: data.anhDaiDien,
-      });
+        // Thay thế hoàn toàn tài khoản cũ bằng tài khoản mới
+        capNhatAuth({
+            id: data.id,
+            email: data.email,
+            vaiTro: data.vaiTro,
+            hoTen: data.hoTen,
+            anhDaiDien: data.anhDaiDien,
+        });
 
+        switch (data.vaiTro) {
+            case "ADMIN":
+                navigate("/admin/tong-quan", { replace: true });
+                break;
 
-      const role: VaiTro = data.vaiTro;
+            case "OWNER":
+                navigate("/tong-quan", { replace: true });
+                break;
 
-      switch (role) {
-        case "ADMIN":
-          navigate("/admin/tong-quan", { replace: true });
-          break;
+            case "USER":
+                navigate("/", { replace: true });
+                break;
 
-        case "OWNER":
-          navigate("/tong-quan", { replace: true });
-          break;
-
-        case "USER":
-          navigate("/", { replace: true });
-          break;
-
-        default:
-          setError("Vai trò tài khoản không hợp lệ!");
-      }
+            default:
+                setError("Vai trò tài khoản không hợp lệ!");
+        }
 
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-        "Email hoặc mật khẩu không chính xác."
-      );
+        setError(
+            err.response?.data?.message ||
+            "Email hoặc mật khẩu không chính xác."
+        );
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
 const handleGoogleLogin = () => {
     window.location.href =

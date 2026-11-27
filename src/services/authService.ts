@@ -1,6 +1,8 @@
 import React from 'react';
 import type { DangKyDTO, DangNhapRequest, DangNhapResponse } from '../types/auth';
 import api from './api';
+
+
 export async function dangKy(data: DangKyDTO){
     return api.post("/auth/dangKy", data);
 }
@@ -10,19 +12,12 @@ export async function dangKy(data: DangKyDTO){
 export const dangNhap = async (
     data: DangNhapRequest
 ): Promise<DangNhapResponse> => {
-    try {
-        const response = await api.post<DangNhapResponse>(
-            "/auth/dangNhap",
-            data
-        );
+    const response = await api.post<DangNhapResponse>(
+        "/auth/dangNhap",
+        data
+    );
 
-        return response.data;
-
-    } catch (error: any) {
-
-
-        throw error;
-    }
+    return response.data;
 };
 
 export const dangXuat = async () => {

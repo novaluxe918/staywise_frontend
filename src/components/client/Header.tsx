@@ -53,7 +53,8 @@ const paperStyle = {
   borderRadius: "16px",
   bgcolor: "#fff",
   color: TEXT,
-  border: "1px solid #e2e8f0",
+  border: "none",
+  outline: "none",
   boxShadow: "0 12px 35px rgba(15,23,42,0.12)",
 };
 

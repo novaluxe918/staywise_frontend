@@ -32,7 +32,7 @@ import {
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { dangXuat as dangXuatAPI } from "../../services/authService";
+
 import { useAuth } from "../../context/AuthContext";
 import {
   getThongTinHoSo,
@@ -61,24 +61,46 @@ export default function HeaderOwner() {
   const moDropDown = Boolean(anchorEl);
   const trangThai = thongtinXacMinh?.trangThaiXacMinh;
   const coThongBao = trangThai === "DA_XAC_MINH" || trangThai === "TU_CHOI";
+  const { nguoiDung, dangXuat: xoaPhienDangNhap } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchThongTinXacMinh = async () => {
       try {
         const data = await layThongTinNguoiDung();
-        setThongTinXacMinh(data);
+
+        if (isMounted) {
+          setThongTinXacMinh(data);
+        }
       } catch (error) {
-        console.error("Lỗi lấy thông tin xác minh:", error);
+        if (isMounted) {
+          console.error("Lỗi lấy thông tin xác minh:", error);
+          setThongTinXacMinh(null);
+        }
       }
     };
 
-    fetchThongTinXacMinh();
-    const interval = setInterval(fetchThongTinXacMinh, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    // Xóa thông tin của chủ cũ trước khi tải chủ mới
+    setThongTinXacMinh(null);
 
-  const { nguoiDung, dangXuat: xoaPhienDangNhap } = useAuth();
-  const navigate = useNavigate();
+    if (nguoiDung?.id) {
+      void fetchThongTinXacMinh();
+    }
+
+    const interval = nguoiDung?.id
+      ? setInterval(fetchThongTinXacMinh, 30000)
+      : undefined;
+
+    return () => {
+      isMounted = false;
+
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [nguoiDung?.id]);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -90,14 +112,10 @@ export default function HeaderOwner() {
 
   const handleLogout = async () => {
     handleCloseMenu();
-    try {
-      await dangXuatAPI();
-    } catch (err) {
-      console.error("Lỗi đăng xuất", err);
-    } finally {
-      xoaPhienDangNhap();
-      navigate("/", { replace: true });
-    }
+
+    await xoaPhienDangNhap();
+
+    navigate("/", { replace: true });
   };
 
   const handleDangKyHomeStay = async () => {
