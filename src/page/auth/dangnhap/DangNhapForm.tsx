@@ -96,11 +96,10 @@ function DangNhapForm() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    setError(
-      "Chức năng đăng nhập Google chưa được tích hợp OAuth."
-    );
-  };
+const handleGoogleLogin = () => {
+    window.location.href =
+        "http://localhost:8080/oauth2/authorization/google";
+};
 
   return (
     <Box sx={{ width: "100%", maxWidth: 440 }}>

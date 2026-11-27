@@ -1,171 +1,456 @@
-import { ChevronDown, Heart, LogIn, Menu, UserRound, X } from 'lucide-react';
-import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+
+import React, { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import {
+  AppBar, Avatar, Box, Button, Container, Divider, Drawer,
+  IconButton, List, ListItem, ListItemButton, ListItemText,
+  Menu, MenuItem, Stack, Toolbar, Tooltip, Typography, alpha,
+} from "@mui/material";
+import {
+  Heart, LogIn, LogOut, Menu as MenuIcon,
+  UserRound, X, ShieldCheck, ChevronDown,
+} from "lucide-react";
+
+import { useAuth } from "../../context/AuthContext";
+import logo from "../../assets/logo.png";
+
+const GREEN = "#15803D";
+const DARK = "#14532D";
+const TEXT = "#1e293b";
+const MUTED = "#64748b";
+
+const NAV_ITEMS = [
+  { label: "Trang chủ", path: "/" },
+  { label: "Khám phá", path: "/kham-pha" },
+  { label: "Ưu đãi", path: "/uu-dai" },
+  { label: "Về chúng tôi", path: "/ve-chung-toi" },
+];
+
+const ACCOUNT_ITEMS = [
+  { label: "Hồ sơ của tôi", path: "/tai-khoan", icon: <UserRound size={18} /> },
+  { label: "Phòng yêu thích", path: "/yeu-thich", icon: <Heart size={18} /> },
+];
+
+const buttonStyle = {
+  borderRadius: "12px",
+  textTransform: "none" as const,
+  fontWeight: 700,
+  py: 1.1,
+};
+
+const navStyle = {
+  ...buttonStyle,
+  px: 2,
+  color: TEXT,
+  fontSize: "0.92rem",
+  "&:hover": { color: GREEN, bgcolor: alpha(GREEN, 0.06) },
+  "&.active": { color: GREEN, bgcolor: alpha(GREEN, 0.08) },
+};
+
+const paperStyle = {
+  mt: 1.5,
+  minWidth: 230,
+  borderRadius: "16px",
+  bgcolor: "#fff",
+  color: TEXT,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 12px 35px rgba(15,23,42,0.12)",
+};
 
 function Header() {
-    const [menu, setMenu] = useState(false);
-   const { nguoiDung, token, dangXuat } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const tenNguoiDung = nguoiDung?.hoTen;
+  const { nguoiDung, dangXuat } = useAuth();
+  const navigate = useNavigate();
 
-    const navItems = [
-        { label: "Trang chủ", path: "/" },
-        { label: "Khám phá", path: "/kham-pha" },
-        { label: "Ưu đãi", path: "/uu-dai" },
-        { label: "Về chúng tôi", path: "/ve-chung-toi" },
-    ];
+  const tenNguoiDung =
+    nguoiDung?.hoTen || nguoiDung?.email || "Tài khoản";
 
-    const navClass = ({ isActive }: { isActive: boolean }) =>
-        `text-sm font-medium transition-colors duration-200 ${isActive ? "text-teal-300"
-            : "text-white/80 hover:text-teal-300"} `
-    return (
-         <header className="relative z-50 w-full bg-[#0a1526]/95 text-white shadow-lg backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
+  const dongDrawer = () => setMobileOpen(false);
+  const dongMenu = () => setAnchorEl(null);
 
-        {/* LOGO */}
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 shadow-lg shadow-teal-500/20">
-            <span className="text-xl font-extrabold text-white">
-              S
-            </span>
-          </div>
+  const handleLogout = async () => {
+    dongMenu();
+    dongDrawer();
+    await dangXuat();
+    navigate("/");
+  };
 
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight">
-              Stay<span className="text-teal-400">Wise</span>
-            </h1>
-            <p className="text-[10px] tracking-widest text-slate-400">
-              YOUR PERFECT STAY
-            </p>
-          </div>
-        </Link>
+  // LOGO
+  const Logo = () => (
+    <Box
+      component={Link}
+      to="/"
+      sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+    >
+      <Box
+        component="img"
+        src={logo}
+        alt="StayWise Homestay"
+        sx={{
+          width: 145,
+          height: 68,
+          objectFit: "contain",
+          objectPosition: "left center",
+          display: "block",
+        }}
+      />
+    </Box>
+  );
 
-        {/* MENU DESKTOP */}
-        <nav className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/"}
-              className={navClass}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+  // AVATAR
+  const AvatarUser = ({ size = 36 }: { size?: number }) => (
+    <Avatar
+      src={nguoiDung?.anhDaiDien || undefined}
+      sx={{
+        width: size,
+        height: size,
+        bgcolor: GREEN,
+        fontWeight: 700,
+      }}
+    >
+      {tenNguoiDung.charAt(0).toUpperCase()}
+    </Avatar>
+  );
 
-        {/* ACTIONS */}
-        <div className="hidden items-center gap-3 md:flex">
-          <Link
-            to="/yeu-thich"
-            aria-label="Danh sách yêu thích"
-            className="rounded-full p-2.5 text-white/80 transition hover:bg-white/10 hover:text-teal-300"
-          >
-            <Heart size={20} />
-          </Link>
+  
+  const AuthButtons = ({ mobile = false }: { mobile?: boolean }) => (
+    <Stack direction={mobile ? "column" : "row"} spacing={1.5}>
+      <Button
+        component={Link}
+        to="/dang-nhap"
+        onClick={mobile ? dongDrawer : undefined}
+        startIcon={<LogIn size={17} />}
+        sx={{
+          ...buttonStyle,
+          px: 2,
+          color: TEXT,
+          border: mobile ? "1px solid #e2e8f0" : "none",
+          "&:hover": { color: GREEN, bgcolor: alpha(GREEN, 0.06) },
+        }}
+      >
+        Đăng nhập
+      </Button>
 
-          {token ? (
-            <Link
-              to="/tai-khoan"
-              className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 transition hover:bg-white/10"
-            >
-              <UserRound size={18} className="text-teal-300" />
+      <Button
+        component={Link}
+        to="/dang-ky"
+        onClick={mobile ? dongDrawer : undefined}
+        variant="contained"
+        sx={{
+          ...buttonStyle,
+          px: 2.5,
+          color: "#fff",
+          bgcolor: GREEN,
+          boxShadow: "0 4px 12px rgba(21,128,61,0.18)",
+          "&:hover": { bgcolor: DARK },
+        }}
+      >
+        {mobile ? "Đăng ký ngay" : "Đăng ký"}
+      </Button>
+    </Stack>
+  );
 
-              <span className="max-w-32 truncate text-sm font-medium">
-                {tenNguoiDung || nguoiDung?.email || "Tài khoản của tôi"}
-              </span>
-
-              <ChevronDown size={16} />
-            </Link>
-          ) : (
-            <>
-              <Link
-                to="/dang-nhap"
-                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:text-teal-300"
-              >
-                <LogIn size={17} />
-                Đăng nhập
-              </Link>
-
-              <Link
-                to="/dang-ky"
-                className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-900/30 transition hover:bg-teal-500"
-              >
-                Đăng ký
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* BUTTON MOBILE */}
-        <button
-          type="button"
-          onClick={() => setMenu(!menu)}
-          aria-label={menu ? "Đóng menu" : "Mở menu"}
-          aria-expanded={menu}
-          className="rounded-lg p-2 transition hover:bg-white/10 md:hidden"
+  // DANH SÁCH TÀI KHOẢN
+  const AccountLinks = ({ mobile = false }: { mobile?: boolean }) => (
+    <>
+      {ACCOUNT_ITEMS.map((item) => (
+        <Button
+          key={item.path}
+          component={Link}
+          to={item.path}
+          onClick={mobile ? dongDrawer : dongMenu}
+          startIcon={item.icon}
+          fullWidth={mobile}
+          sx={{
+            ...buttonStyle,
+            justifyContent: "flex-start",
+            color: mobile ? TEXT : GREEN,
+            "&:hover": { bgcolor: alpha(GREEN, 0.06) },
+          }}
         >
-          {menu ? <X size={25} /> : <Menu size={25} />}
-        </button>
-      </div>
+          {item.label}
+        </Button>
+      ))}
+    </>
+  );
 
-      {/* MENU MOBILE */}
-      {menu && (
-        <div className="border-t border-white/10 bg-[#0a1526] px-5 py-5 md:hidden">
-          <nav className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
+  // MENU TÀI KHOẢN DESKTOP
+  const UserMenu = () => (
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={dongMenu}
+      anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      transformOrigin={{ horizontal: "right", vertical: "top" }}
+      slotProps={{ paper: { sx: paperStyle } }}
+    >
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <Typography sx={{ fontWeight: 700 }} variant="body2" noWrap>
+          {tenNguoiDung}
+        </Typography>
+        <Typography variant="caption" color={MUTED}>
+          Tài khoản StayWise
+        </Typography>
+      </Box>
+
+      <Divider />
+
+      {ACCOUNT_ITEMS.map((item) => (
+        <MenuItem
+          key={item.path}
+          component={Link}
+          to={item.path}
+          onClick={dongMenu}
+          sx={{ py: 1.3, gap: 1.5 }}
+        >
+          <Box sx={{ color: GREEN, display: "flex" }}>{item.icon}</Box>
+          {item.label}
+        </MenuItem>
+      ))}
+
+      <Divider />
+
+      <MenuItem onClick={handleLogout} sx={{ py: 1.3, gap: 1.5, color: "#e11d48" }}>
+        <LogOut size={18} />
+        Đăng xuất
+      </MenuItem>
+    </Menu>
+  );
+
+  // NÚT TÀI KHOẢN MOBILE
+  const MobileUser = () => (
+    <Stack spacing={1.5}>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{
+          p: 1.5,
+          borderRadius: "14px",
+          bgcolor: alpha(GREEN, 0.05),
+          alignItems: "center",
+        }}
+      >
+        <AvatarUser size={42} />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontWeight: 700 }} noWrap>{tenNguoiDung}</Typography>
+          <Typography variant="caption" color={MUTED}>
+            Thành viên StayWise
+          </Typography>
+        </Box>
+      </Stack>
+
+      <AccountLinks mobile />
+
+      <Button
+        onClick={handleLogout}
+        startIcon={<LogOut size={18} />}
+        sx={{ ...buttonStyle, justifyContent: "flex-start", color: "#e11d48" }}
+      >
+        Đăng xuất
+      </Button>
+    </Stack>
+  );
+
+  return (
+    <>
+      {/* HEADER */}
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: "#fff",
+          color: TEXT,
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 3px 15px rgba(15,23,42,0.04)",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Container maxWidth="xl">
+          <Toolbar disableGutters sx={{ minHeight: "82px !important" }}>
+            <Logo />
+
+            {/* MENU DESKTOP */}
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{ display: { xs: "none", md: "flex" }, ml: 4 }}
+            >
+              {NAV_ITEMS.map((item) => (
+                <Button
+                  key={item.path}
+                  component={NavLink}
+                  to={item.path}
+                  end={item.path === "/"}
+                  sx={navStyle}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </Stack>
+
+            {/* ACTION DESKTOP */}
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{
+                display: { xs: "none", md: "flex" },
+                ml: "auto",
+                alignItems: "center",
+              }}
+            >
+              <Tooltip title="Phòng yêu thích">
+                <IconButton
+                  component={Link}
+                  to="/yeu-thich"
+                  sx={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: "12px",
+                    color: MUTED,
+                    bgcolor: "#f8fafc",
+                    "&:hover": { color: "#e11d48", bgcolor: "#fff1f2" },
+                  }}
+                >
+                  <Heart size={19} />
+                </IconButton>
+              </Tooltip>
+
+              {nguoiDung ? (
+                <>
+                  <Button
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                    endIcon={<ChevronDown size={16} />}
+                    sx={{
+                      ...buttonStyle,
+                      color: TEXT,
+                      bgcolor: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      px: 1.5,
+                      "&:hover": { bgcolor: alpha(GREEN, 0.05) },
+                    }}
+                  >
+                    <AvatarUser />
+                    <Typography sx={{ ml: 1.2, maxWidth: 130, fontWeight: 600 }} noWrap>
+                      {tenNguoiDung}
+                    </Typography>
+                  </Button>
+                  <UserMenu />
+                </>
+              ) : (
+                <AuthButtons />
+              )}
+            </Stack>
+
+            {/* ACTION MOBILE */}
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ display: { xs: "flex", md: "none" }, ml: "auto" }}
+            >
+              <IconButton component={Link} to="/yeu-thich" sx={{ color: MUTED }}>
+                <Heart size={20} />
+              </IconButton>
+
+              <IconButton
+                onClick={() => setMobileOpen(!mobileOpen)}
+                sx={{
+                  color: GREEN,
+                  borderRadius: "12px",
+                  bgcolor: alpha(GREEN, 0.06),
+                }}
+              >
+                {mobileOpen ? <X size={22} /> : <MenuIcon size={22} />}
+              </IconButton>
+            </Stack>
+          </Toolbar>
+        </Container>
+      </AppBar>
+
+      {/* DRAWER MOBILE */}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={dongDrawer}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "85%", sm: 320 },
+              maxWidth: 360,
+              bgcolor: "#fff",
+              color: TEXT,
+              px: 2.5,
+              pt: 3,
+              borderLeft: "1px solid #e2e8f0",
+            },
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 3,
+          }}
+        >
+          <Logo />
+          <IconButton onClick={dongDrawer} sx={{ color: MUTED }}>
+            <X size={20} />
+          </IconButton>
+        </Box>
+
+        <Typography variant="caption" sx={{ px: 1, mb: 1, fontWeight: 700, color: MUTED }}>
+          ĐIỀU HƯỚNG
+        </Typography>
+
+        <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+          {NAV_ITEMS.map((item) => (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                component={NavLink}
                 to={item.path}
                 end={item.path === "/"}
-                onClick={() => setMenu(false)}
-                className={({ isActive }) =>
-                  `rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? "bg-teal-500/10 text-teal-300"
-                      : "text-white/80 hover:bg-white/5"
-                  }`
-                }
+                onClick={dongDrawer}
+                sx={{
+                  borderRadius: "12px",
+                  py: 1.3,
+                  color: MUTED,
+                  "&:hover": { bgcolor: alpha(GREEN, 0.05), color: GREEN },
+                  "&.active": { bgcolor: alpha(GREEN, 0.08), color: GREEN },
+                }}
               >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+                <ListItemText
+                  primary={item.label}
+                  slotProps={{ primary: { sx: { fontWeight: 600, fontSize: "0.95rem" } } }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
 
-          <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4">
-            {token ? (
-              <Link
-                to="/tai-khoan"
-                onClick={() => setMenu(false)}
-                className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-bold"
-              >
-                {tenNguoiDung || "Tài khoản của tôi"}
-              </Link>
-            ) : (
-              <>
-                <Link
-                  to="/dang-nhap"
-                  onClick={() => setMenu(false)}
-                  className="rounded-xl border border-white/20 px-4 py-3 text-center text-sm font-semibold"
-                >
-                  Đăng nhập
-                </Link>
+        <Divider sx={{ my: 3 }} />
 
-                <Link
-                  to="/dang-ky"
-                  onClick={() => setMenu(false)}
-                  className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-bold"
-                >
-                  Đăng ký
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </header>
-    );
+        <Typography variant="caption" color={MUTED} sx={{ px: 1, mb: 1.5, fontWeight: 700 }}>
+          TÀI KHOẢN
+        </Typography>
+
+        {nguoiDung ? <MobileUser /> : <AuthButtons mobile />}
+
+        <Box sx={{ mt: "auto", py: 3 }}>
+          <Divider sx={{ mb: 2 }} />
+          <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 1 }}>
+            <ShieldCheck size={16} color={GREEN} />
+            <Typography variant="caption" color={MUTED}>
+              Khám phá và tận hưởng kỳ nghỉ
+            </Typography>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
+  );
 }
 
-export default Header;
+export default Header

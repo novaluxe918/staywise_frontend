@@ -110,6 +110,7 @@ const DuDoanGia: React.FC = () => {
 
         try {
             setLoadingDuDoan(true);
+            setLoadingLichSu(true);
             setKetQuaDuDoan(null);
 
             const ketQua = await duDoanGia({

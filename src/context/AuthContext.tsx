@@ -27,10 +27,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const layUserTuCookie = (): NguoiDung | null => {
   const rawData = Cookies.get("user_info");
+
   if (!rawData) return null;
+
   try {
-    return JSON.parse(decodeURIComponent(rawData));
-  } catch {
+    return JSON.parse(rawData) as NguoiDung;
+  } catch (error) {
+    console.error("Không thể đọc thông tin user_info:", error);
     return null;
   }
 };
