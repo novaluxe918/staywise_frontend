@@ -7,6 +7,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material'
 import { HomeStayProvider } from './context/HomeStayContext.tsx'
 import { PhongProvider } from './context/PhongContext.tsx'
+import { TienIchProvider } from './context/TienIchContext.tsx'
+import { DichVuProvider } from './context/DichVuContext.tsx'
 
 
 const theme = createTheme({
@@ -23,7 +25,11 @@ createRoot(document.getElementById('root')!).render(
                 <AuthProvider>
                     <HomeStayProvider>
                         <PhongProvider>
-                            <App />
+                            <TienIchProvider>
+                                <DichVuProvider>
+                                    <App />
+                                </DichVuProvider>
+                            </TienIchProvider>
                         </PhongProvider>
                     </HomeStayProvider>
                 </AuthProvider>

@@ -26,6 +26,7 @@ import QuanLyDeXuat from "../page/admin/dexuat/QuanLyDeXuat";
 import QuanLyGiuong from "../page/owner/giuong/QuanLyGiuong";
 import QuanLyGiaPhong from "../page/owner/giaphong/QuanLyGiaPhong";
 import DuDoanGia from "../page/owner/dudoangia/DuDoanGia";
+import ChiTietHomeStay from "../page/client/homestay/ChiTietHomeStay";
 
 
 
@@ -39,6 +40,12 @@ function AppRoutes() {
       {/* Giao diện khách hàng */}
       <Route path="/" element={<ClientLayout />}>
         <Route index element={<Home />} />
+
+        <Route
+          path="/homestay/:id"
+          element={<ChiTietHomeStay />}
+        />
+
       </Route>
 
       <Route path="/admin" element={<LayoutAdmin />}>
@@ -65,10 +72,10 @@ function AppRoutes() {
         <Route path="/tong-quan" element={<Dasboard />} />
         <Route path="/quan-ly-phong" element={<QuanLyPhong />} />
         <Route path="/ho-so" element={<HoSo />} />
-         <Route path="/de-xuat" element={<ChatDeXuat />} />
-         <Route path="/giuong" element={<QuanLyGiuong />} />
-         <Route path="/gia-phong" element={<QuanLyGiaPhong />} />
-         <Route path="/du-doan-gia" element={<DuDoanGia />} />
+        <Route path="/de-xuat" element={<ChatDeXuat />} />
+        <Route path="/giuong" element={<QuanLyGiuong />} />
+        <Route path="/gia-phong" element={<QuanLyGiaPhong />} />
+        <Route path="/du-doan-gia" element={<DuDoanGia />} />
       </Route>
 
       {/* Đăng ký thông tin HomeStay */}

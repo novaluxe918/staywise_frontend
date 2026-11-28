@@ -37,12 +37,10 @@ import {
   layDanhSachTinhThanh,
 } from "../../../services/diaChiService";
 import type { HomeStayRequest, TheLoaiHomeStayResponse } from "../../../types/homestay";
-import type { DichVu } from "../../../types/dichVu";
-import { searchDichVu } from "../../../services/dichVuService";
-import type { TienIch } from "../../../types/tienIch";
-import { getAllTienIch } from "../../../services/tienIchService";
 import { useUploadAnh } from "../../../hooks/useUploadAnh";
 import { toast } from "../../../utils/toast";
+import { useTienIch } from "../../../context/TienIchContext";
+import { useDichVu } from "../../../context/DichVuContext";
 
 
 const emeraldFieldSx = {
@@ -154,18 +152,26 @@ export default function DangKyThongTin() {
     dinhDang: ["image/jpeg", "image/png", "image/webp"],
   });
 
+  const {
+    danhSachTienIch,
+    danhSachTienIchHS,
+    dangTaiTienIch,
+    toggleTienIch,
+    resetTienIch,
+  } = useTienIch();
+
+  const {
+    danhSachDichVu,
+    danhSachDichVuHS,
+    dangTaiDichVu,
+    toggleDichVu,
+    resetDichVu,
+  } = useDichVu();
+
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [dangLuu, setDangLuu] = useState(false);
   const [danhSachTinhThanh, setDanhSachTinhThanh] = useState<TinhThanh[]>([]);
   const [danhSachPhuongXa, setDanhSachPhuongXa] = useState<PhuongXa[]>([]);
-
-  const [danhSachTienIch, setDanhSachTienIch] = useState<TienIch[]>([]);
-  const [tienIchDaChon, setTienIchDaChon] = useState<number[]>([]);
-  const [dangTaiTienIch, setDangTaiTienIch] = useState(false);
-
-  const [danhSachDichVu, setDanhSachDichVu] = useState<DichVu[]>([])
-  const [dichVuDaChon, setDichVuDaChon] = useState<number[]>([]);
-  const [dangTaiDichVu, setDangTaiDichVu] = useState(false);
 
   const [danhSachTheLoai, setDanhSachTheLoai] = useState<TheLoaiHomeStayResponse[]>([]);
   const [dangTaiTheLoai, setDangTaiTheLoai] = useState(false);
@@ -203,41 +209,6 @@ export default function DangKyThongTin() {
   }, [form.tinhThanh, danhSachTinhThanh]);
 
   useEffect(() => {
-    const taiDanhSachTienIch = async () => {
-      try {
-        setDangTaiTienIch(true);
-
-        const response = await getAllTienIch("", 0, 100);
-
-        setDanhSachTienIch(response.content);
-      } catch (error) {
-        console.error("Lỗi lấy danh sách tiện ích:", error);
-      } finally {
-        setDangTaiTienIch(false);
-      }
-    };
-
-    taiDanhSachTienIch();
-  }, []);
-
-  useEffect(() => {
-    const taiDanhSachDichVu = async () => {
-      try {
-
-        setDangTaiDichVu(true);
-        const response = await searchDichVu("", 0, 100);
-
-        setDanhSachDichVu(response.content);
-      } catch (error) {
-        console.error("Lỗi lấy danh sách dịch vụ:", error);
-      } finally {
-        setDangTaiDichVu(false)
-      }
-    };
-    taiDanhSachDichVu();
-  }, []);
-
-  useEffect(() => {
     const layDanhSachTheLoai = async () => {
       try {
         setDangTaiTheLoai(true);
@@ -262,108 +233,99 @@ export default function DangKyThongTin() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const toggleTienIch = (id: number) => {
-    setTienIchDaChon((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
-    );
-  };
 
-  const toggleDichVu = (id: number) => {
-    setDichVuDaChon((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id])
-  };
-
-
-
-  const xuLyGuiForm = async (e: FormEvent<HTMLFormElement>) => {
+const xuLyGuiForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (dangLuu) return;
 
+ 
     if (anhList.length < 5) {
-      toast.warning("Vui lòng tải lên ít nhất 5 ảnh HomeStay!");
-      return;
+        toast.warning("Vui lòng tải lên ít nhất 5 ảnh HomeStay!");
+        return;
     }
 
+    // Kiểm tra ảnh bìa
     if (!anhBia) {
-      toast.warning("Vui lòng chọn ảnh bìa HomeStay!");
-      return;
+        toast.warning("Vui lòng chọn ảnh bìa HomeStay!");
+        return;
     }
 
     setDangLuu(true);
 
     try {
-      const data = new FormData();
+        const data = new FormData();
 
-      // Thông tin HomeStay
-      Object.entries(form).forEach(([key, value]) => {
-        data.append(key, String(value ?? ""));
-      });
+        // 1. Thông tin HomeStay
+        Object.entries(form).forEach(([key, value]) => {
+            data.append(key, String(value ?? ""));
+        });
 
-      // Danh sách ảnh
-      anhList.forEach((anh) => {
-        data.append("files", anh.file);
-      });
+      
+        anhList.forEach((anh) => {
+            data.append("files", anh.file);
+        });
 
-      // Vị trí ảnh bìa
-      const viTriAnhBia = anhList.findIndex(
-        (anh) => anh.id === anhBia
-      );
+        // 3. Vị trí ảnh bìa
+        const viTriAnhBia = anhList.findIndex(
+            (anh) => anh.id === anhBia
+        );
 
-      data.append("anhBiaIndex", String(viTriAnhBia));
+        if (viTriAnhBia === -1) {
+            toast.warning("Ảnh bìa không hợp lệ. Vui lòng chọn lại!");
+            return;
+        }
 
-      // Danh sách tiện ích
-      tienIchDaChon.forEach((id) => {
-        data.append("danhSachTienIchHS", String(id));
-      });
+        data.append("anhBiaIndex", String(viTriAnhBia));
 
-      // Danh sách dịch vụ
-      dichVuDaChon.forEach((id) => {
-        data.append("danhSachDichVuHS", String(id));
-      });
+        danhSachTienIchHS.forEach((id) => {
+            data.append("danhSachTienIchHS", String(id));
+        });
 
 
-      const response = await dangKyHomeStay(data);
+        danhSachDichVuHS.forEach((id) => {
+            data.append("danhSachDichVuHS", String(id));
+        });
 
-      console.log("KẾT QUẢ BACKEND:", response.data);
+        await dangKyHomeStay(data);
 
-      toast.success("Đăng ký HomeStay thành công!");
+        toast.success("Đăng ký HomeStay thành công!");
 
-      setForm({
-        tenHomeStay: "",
-        moTa: "",
-        phuongXa: "",
-        tinhThanh: "",
-        diaChi: "",
-        soDienThoai: "",
-        email: "",
-        theLoaiHomeStay: "",
-      });
+        // 7. Reset form
+        setForm({
+            tenHomeStay: "",
+            moTa: "",
+            phuongXa: "",
+            tinhThanh: "",
+            diaChi: "",
+            soDienThoai: "",
+            email: "",
+            theLoaiHomeStay: "",
+        });
 
-      xoaTatCaAnh();
-      setTienIchDaChon([]);
-      setDichVuDaChon([]);
+        xoaTatCaAnh();
+        resetTienIch();
+        resetDichVu();
 
     } catch (error: any) {
-      const message =
-        typeof error.response?.data === "string"
-          ? error.response.data
-          : error.response?.data?.message ??
-          "Không thể kết nối đến máy chủ. Vui lòng thử lại.";
+        const message =
+            typeof error.response?.data === "string"
+                ? error.response.data
+                : error.response?.data?.message ??
+                  "Không thể kết nối đến máy chủ. Vui lòng thử lại.";
 
-      toast.error(message);
+        toast.error(message);
 
     } finally {
-      setDangLuu(false);
+        setDangLuu(false);
     }
-  };
+};
 
 
-
-  const soBuocHoanThanh = (form.tenHomeStay.trim() && form.moTa.trim() && form.email.trim() ? 1 : 0)
+const soBuocHoanThanh =
+    (form.tenHomeStay.trim() && form.moTa.trim() && form.email.trim() ? 1 : 0)
     + (anhList.length >= 5 ? 1 : 0)
-    + (tienIchDaChon.length > 0 || dichVuDaChon.length > 0 ? 1 : 0);
+    + (danhSachTienIchHS.length > 0 || danhSachDichVuHS.length > 0 ? 1 : 0);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5f8f6", pb: 12 }}>
@@ -416,7 +378,7 @@ export default function DangKyThongTin() {
             {[
               { label: "Thông tin", done: !!(form.tenHomeStay.trim() && form.moTa.trim() && form.email.trim()) },
               { label: "Hình ảnh", done: anhList.length >= 5 },
-              { label: "Tiện ích", done: tienIchDaChon.length > 0 || dichVuDaChon.length > 0 },
+              { label: "Tiện ích", done: danhSachTienIchHS.length > 0 || danhSachDichVuHS.length > 0 },
             ].map((step, index) => (
               <Box key={step.label} sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, gap: 0.8 }}>
                 <Box
@@ -637,7 +599,7 @@ export default function DangKyThongTin() {
                           {danhSachTienIch
                             .filter((item) => item.trangThai === "DANG_HOAT_DONG")
                             .map((item) => {
-                              const daChon = tienIchDaChon.includes(item.id);
+                              const daChon = danhSachTienIchHS.includes(item.id);
 
                               return (
                                 <Box
@@ -708,7 +670,7 @@ export default function DangKyThongTin() {
                         <ConciergeBell size={17} color="#087653" />
                         <Typography sx={{ fontSize: 13, fontWeight: 750, color: "#263b32" }}>Dịch vụ bổ sung</Typography>
                       </Box>
-                      <Chip size="small" label={`${dichVuDaChon.length} đang bật`} sx={{ height: 23, bgcolor: "#e7f6ee", color: "#087653", fontWeight: 750, fontSize: 10.5 }} />
+                      <Chip size="small" label={`${danhSachDichVuHS.length} đang bật`} sx={{ height: 23, bgcolor: "#e7f6ee", color: "#087653", fontWeight: 750, fontSize: 10.5 }} />
                     </Box>
                     <Stack spacing={1}>
                       {dangTaiDichVu ? (
@@ -724,7 +686,7 @@ export default function DangKyThongTin() {
                           {danhSachDichVu
                             .filter((dv) => dv.trangThai === "DANG_HOAT_DONG")
                             .map((dv) => {
-                              const kichHoat = dichVuDaChon.includes(dv.id);
+                              const kichHoat = danhSachDichVuHS.includes(dv.id);
 
                               return (
                                 <Paper
@@ -792,7 +754,7 @@ export default function DangKyThongTin() {
                 <Box sx={{ display: { xs: "none", sm: "block" } }}>
                   <Typography sx={{ fontSize: 12, fontWeight: 750, color: "#263b32" }}>Hoàn tất đăng ký HomeStay</Typography>
                   <Typography sx={{ fontSize: 10.5, color: "#829087", mt: 0.2 }}>
-                    {anhList.length}/5 ảnh tối thiểu · {tienIchDaChon.length} tiện ích đã chọn
+                    {anhList.length}/5 ảnh tối thiểu · {danhSachTienIchHS.length} tiện ích đã chọn
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>

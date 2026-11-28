@@ -19,10 +19,23 @@ import { dangKyHomeStay, layThongTinHomeStay } from "../../../services/homestayS
 import { useHomeStay } from "../../../context/HomeStayContext";
 import { EditableField } from "../../../components/owner/EditableField";
 import { homeStaySchema, type HomeStayFormValues } from "../../../schemas/homeStaySchema";
+import ChonTienIch from "../tienich/ChonTienIch";
+import ChonDichVu from "../dichvu/ChonDichVu";
+import { useTienIch } from "../../../context/TienIchContext";
+import { useDichVu } from "../../../context/DichVuContext";
 
 
 function HoSo() {
     const { homeStayDangChon, dangTaiHomeStay } = useHomeStay();
+    const {
+        danhSachTienIchHS,
+        setDanhSachTienIchHS,
+    } = useTienIch();
+
+    const {
+        danhSachDichVuHS,
+        setDanhSachDichVuHS,
+    } = useDichVu();
     const [homeStay, setHomeStay] = useState<HomeStay | null>(null);
     const [anhDangXem, setAnhDangXem] = useState<string | null>(null);
     const [dangTai, setDangTai] = useState(false);
@@ -36,6 +49,7 @@ function HoSo() {
 
     useEffect(() => {
         if (dangTaiHomeStay) return;
+
         if (!homeStayDangChon) {
             setHomeStay(null);
             return;
@@ -45,8 +59,15 @@ function HoSo() {
             try {
                 setDangTai(true);
                 setLoi("");
+
                 const data = await layThongTinHomeStay(homeStayDangChon);
+
                 setHomeStay(data);
+
+                // Lấy ID tiện ích và dịch vụ đã lưu
+                setDanhSachTienIchHS(data.danhSachTienIchHS ?? []);
+                setDanhSachDichVuHS(data.danhSachDichVuHS ?? []);
+
                 reset({
                     tenHomeStay: data.tenHomeStay || "",
                     moTa: data.moTa || "",
@@ -54,7 +75,9 @@ function HoSo() {
                     email: data.email || "",
                     diaChi: data.diaChi || "",
                 });
+
             } catch (error) {
+                console.error("Lỗi tải HomeStay:", error);
                 setLoi("Không thể tải thông tin HomeStay!");
             } finally {
                 setDangTai(false);
@@ -62,13 +85,30 @@ function HoSo() {
         };
 
         layDuLieu();
-    }, [homeStayDangChon, dangTaiHomeStay, reset]);
+    }, [
+        homeStayDangChon,
+        dangTaiHomeStay,
+        reset,
+        setDanhSachTienIchHS,
+        setDanhSachDichVuHS,
+    ]);
 
     const xuLyHuy = () => {
-        if (homeStay) reset(homeStay);
+        if (!homeStay) return;
+
+        reset({
+            tenHomeStay: homeStay.tenHomeStay || "",
+            moTa: homeStay.moTa || "",
+            soDienThoai: homeStay.soDienThoai || "",
+            email: homeStay.email || "",
+            diaChi: homeStay.diaChi || "",
+        });
+
+        setDanhSachTienIchHS(homeStay.danhSachTienIchHS ?? []);
+        setDanhSachDichVuHS(homeStay.danhSachDichVuHS ?? []);
+
         setIsEditing(false);
     };
-
     const onSubmit = async (values: HomeStayFormValues) => {
         if (!homeStay) return;
 
@@ -78,19 +118,50 @@ function HoSo() {
             const formData = new FormData();
 
             formData.append("id", String(homeStay.id));
-
-           
             formData.append("tenHomeStay", values.tenHomeStay);
             formData.append("moTa", values.moTa ?? "");
             formData.append("soDienThoai", values.soDienThoai);
             formData.append("email", values.email ?? "");
             formData.append("diaChi", values.diaChi);
 
+            formData.append("capNhatTienIchHS", "true");
+            formData.append("capNhatDichVuHS", "true");
+
+    
+            danhSachTienIchHS.forEach((id) => {
+                formData.append("danhSachTienIchHS", String(id));
+            });
+
+            // 4. Gửi danh sách dịch vụ
+            danhSachDichVuHS.forEach((id) => {
+                formData.append("danhSachDichVuHS", String(id));
+            });
+
+           
+            console.log("Danh sách tiện ích:", danhSachTienIchHS);
+            console.log("Danh sách dịch vụ:", danhSachDichVuHS);
+
+            for (const [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
+
             await dangKyHomeStay(formData);
 
-            setHomeStay(prev =>
-                prev ? { ...prev, ...values } : null
-            );
+          
+            const data = await layThongTinHomeStay(homeStay.id);
+
+            setHomeStay(data);
+
+            setDanhSachTienIchHS(data.danhSachTienIchHS ?? []);
+            setDanhSachDichVuHS(data.danhSachDichVuHS ?? []);
+
+            reset({
+                tenHomeStay: data.tenHomeStay || "",
+                moTa: data.moTa || "",
+                soDienThoai: data.soDienThoai || "",
+                email: data.email || "",
+                diaChi: data.diaChi || "",
+            });
 
             setIsEditing(false);
 
@@ -303,35 +374,15 @@ function HoSo() {
                             </Stack>
                         </Paper>
 
-                        {[
-                            { title: "Tiện ích nổi bật", icon: <CheckIcon color="primary" fontSize="small" />, list: homeStay.tienIchHienThi, color: "#2563eb", textColor: "primary.main", empty: "Chưa cập nhật tiện ích." },
-                            { title: "Dịch vụ đi kèm", icon: <ServiceIcon color="secondary" fontSize="small" />, list: homeStay.dichVuHienThi, color: "#9333ea", textColor: "secondary.main", empty: "Chưa cập nhật dịch vụ." },
-                        ].map((section) => (
-                            <Paper key={section.title} elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
-                                <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: "center" }}>
-                                    {section.icon}
-                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>{section.title}</Typography>
-                                </Stack>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                    {section.list?.length > 0 ? (
-                                        section.list.map((item, idx) => (
-                                            <Chip
-                                                key={idx}
-                                                label={item}
-                                                size="small"
-                                                sx={{
-                                                    borderRadius: 2, bgcolor: alpha(section.color, 0.08),
-                                                    color: section.textColor, fontWeight: 500,
-                                                    border: "1px solid", borderColor: alpha(section.color, 0.2),
-                                                }}
-                                            />
-                                        ))
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary">{section.empty}</Typography>
-                                    )}
-                                </Box>
-                            </Paper>
-                        ))}
+                        <ChonTienIch
+                            isEditing={isEditing}
+                            tienIchHienThi={homeStay.tienIchHienThi}
+                        />
+
+                        <ChonDichVu
+                            isEditing={isEditing}
+                            dichVuHienThi={homeStay.dichVuHienThi}
+                        />
                     </Stack>
                 </Grid>
             </Grid>
